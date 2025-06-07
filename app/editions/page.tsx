@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   Calendar,
@@ -23,196 +29,304 @@ import {
   ArrowDown,
   CalendarIcon,
   User,
-} from "lucide-react"
-import Link from "next/link"
+} from "lucide-react";
+import Link from "next/link";
+import { IEdition } from "@/interfaces/IEdition";
+import { socket } from "@/lib/utils";
+import { IUser } from "@/interfaces/IUser";
 
-type SortField = "number" | "name" | "startDate" | "endDate" | "days" | "president" | "secretary"
-type SortDirection = "asc" | "desc"
+type SortField =
+  | number
+  | "name"
+  | "initial_date"
+  | "end_date"
+  | "duration"
+  | "president"
+  | "secretary";
+type SortDirection = "asc" | "desc";
 
-interface Edition {
-  id: number
-  number: number
-  name: string
-  startDate: string
-  endDate: string
-  days: number
-  president: string
-  secretary: string
-}
+// 2. Función para cargar diputados (separa la lógica)
+const loadEditions = (setMockEditions: Function, currentPage: number) => {
+  socket.emit(
+    "list-editions",
+    {
+      token: sessionStorage.getItem("token"),
+      identity: sessionStorage.getItem("identity"),
+      page: currentPage,
+    },
+    (response: any) => {
+      if (response.success) {
+        setMockEditions(response.editions);
+      }
+    }
+  );
+};
 
 export default function EditionsPage() {
-  const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortField, setSortField] = useState<SortField>("number")
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
-  const [isEditing, setIsEditing] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<Edition | null>(null)
+  const router = useRouter();
+  const identity = sessionStorage.getItem("identity");
+  const token = sessionStorage.getItem("token");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<IEdition | null>(null);
+  const [mockEditions, setMockEditions] = useState<IEdition[]>([]);
+  const [presidents, setPresidents] = useState<IUser[]>([]);
+  const [secretaries, setSecretaries] = useState<IUser[]>([]);
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("authenticated") || sessionStorage.getItem("authenticated")
+    const isAuthenticated = sessionStorage.getItem("authenticated");
     if (!isAuthenticated) {
-      router.push("/")
+      router.push("/");
     }
-  }, [router])
+
+    const loadDeputies = (deputy: string) => {
+      socket.emit(
+        `get-list-general-${deputy}`,
+        {
+          token: sessionStorage.getItem("token"),
+          identity: sessionStorage.getItem("identity"),
+          page: currentPage,
+        },
+        (response: any) => {
+          if (response.success) {
+            if (deputy === "presidents") setPresidents(response.deputies);
+            else setSecretaries(response.deputies);
+          }
+        }
+      );
+    };
+
+    loadEditions(setMockEditions, currentPage);
+    loadDeputies("presidents");
+    loadDeputies("secretaries");
+  }, [router, currentPage]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("authenticated")
-    sessionStorage.removeItem("username")
-    sessionStorage.removeItem("authenticated")
-    sessionStorage.removeItem("username")
-    router.push("/")
-  }
+    sessionStorage.removeItem("authenticated");
+    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("username");
+    router.push("/");
+  };
+
+  const handleOnUpdate = (id: number | undefined) => {
+    const sendEdition = { ...selectedItem };
+
+    if (id !== 0) {
+      if (!id) {
+        return;
+      }
+      (sendEdition.president = sendEdition.presidentUserName),
+        (sendEdition.secretary = sendEdition.secretaryUserName);
+
+      socket.emit(
+        "update-edition",
+        { identity, token, id, ...sendEdition },
+        (response: any) => {
+          if (response.success) {
+            //Recargar a las ediciones
+            loadEditions(setMockEditions, currentPage);
+          } else {
+            console.log(response.message);
+          }
+        }
+      );
+    } else {
+      socket.emit(
+        "create-edition",
+        { identity, token, ...selectedItem },
+        (response: any) => {
+          if (response.success) {
+            //Recargar a las ediciones
+            loadEditions(setMockEditions, currentPage);
+          } else {
+            console.log(response.message);
+          }
+        }
+      );
+    }
+  };
+
+  const handleInputChange = (field: keyof IEdition, value: string) => {
+    const updatedEdition: any = { ...selectedItem };
+
+    updatedEdition[field] = value;
+    if (field === "president" || field === "secretary") {
+      updatedEdition[`${field}UserName`] = value;
+    }
+
+    // Actualizar ambos: estado local y usuario auxiliar
+    setSelectedItem(updatedEdition);
+  };
+
+  const handleDelete = (id: number) => {
+    socket.emit("delete-edition", { identity, token, id }, (response: any) => {
+      if (response.success) {
+        //Recargar a las ediciones
+        loadEditions(setMockEditions, currentPage);
+      }
+    });
+  };
 
   const navigationTabs = [
     { id: "users", label: "Gestionar Usuario", icon: Users, href: "/users" },
-    { id: "editions", label: "Gestionar Edición", icon: Calendar, href: "/editions", active: true },
-    { id: "commissions", label: "Gestionar Comisiones", icon: Building, href: "/commissions" },
-    { id: "voting", label: "Gestionar Votaciones", icon: Vote, href: "/voting" },
+    {
+      id: "editions",
+      label: "Gestionar Edición",
+      icon: Calendar,
+      href: "/editions",
+      active: true,
+    },
+    {
+      id: "commissions",
+      label: "Gestionar Comisiones",
+      icon: Building,
+      href: "/commissions",
+    },
+    {
+      id: "voting",
+      label: "Gestionar Votaciones",
+      icon: Vote,
+      href: "/voting",
+    },
     { id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
-  ]
-
-  // Mock data for editions
-  const mockEditions: Edition[] = [
-    {
-      id: 1,
-      number: 1,
-      name: "Edición IV",
-      startDate: "2025-04-04",
-      endDate: "2025-04-08",
-      days: 4,
-      president: "Alejandro Torres",
-      secretary: "Miguel Ruiz",
-    },
-    {
-      id: 2,
-      number: 2,
-      name: "Edición X",
-      startDate: "2025-08-04",
-      endDate: "2025-08-10",
-      days: 6,
-      president: "Alejandro Torres",
-      secretary: "Miguel Ruiz",
-    },
-    {
-      id: 3,
-      number: 3,
-      name: "Edición XII",
-      startDate: "2025-10-15",
-      endDate: "2025-10-20",
-      days: 5,
-      president: "Carlos Méndez",
-      secretary: "Ana Torres",
-    },
-    {
-      id: 4,
-      number: 4,
-      name: "Edición XIII",
-      startDate: "2026-01-10",
-      endDate: "2026-01-15",
-      days: 5,
-      president: "María López",
-      secretary: "Pedro Ramírez",
-    },
-  ]
+  ];
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field)
-      setSortDirection("asc")
+      setSortField(field);
+      setSortDirection("asc");
     }
-  }
+  };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 text-gray-400" />
+    if (sortField !== field)
+      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
     return sortDirection === "asc" ? (
       <ArrowUp className="w-4 h-4 text-blue-600" />
     ) : (
       <ArrowDown className="w-4 h-4 text-blue-600" />
-    )
-  }
+    );
+  };
 
-  const filteredAndSortedEditions = mockEditions
-    .filter((edition) => {
-      return (
-        edition.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        edition.president.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        edition.secretary.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    })
-    .sort((a, b) => {
-      let aValue: string | number = a[sortField]
-      let bValue: string | number = b[sortField]
+  const filteredAndSortedEditions = mockEditions.filter((edition) => {
+    return (
+      edition.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      edition.president.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      edition.secretary.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+  /*.sort((a, b) => {
+      let aValue: string | number = a[sortField];
+      let bValue: string | number = b[sortField];
 
       if (sortField === "startDate" || sortField === "endDate") {
-        aValue = new Date(aValue as string).getTime()
-        bValue = new Date(bValue as string).getTime()
+        aValue = new Date(aValue as string).getTime();
+        bValue = new Date(bValue as string).getTime();
       }
 
       if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase()
-        bValue = (bValue as string).toLowerCase()
+        aValue = aValue.toLowerCase();
+        bValue = (bValue as string).toLowerCase();
       }
 
       if (sortDirection === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
       } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
       }
-    })
+    });*/
 
-  const totalPages = Math.ceil(filteredAndSortedEditions.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedEditions = filteredAndSortedEditions.slice(startIndex, startIndex + itemsPerPage)
+  const totalPages = Math.ceil(filteredAndSortedEditions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedEditions = filteredAndSortedEditions.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
-  const renderEditionForm = (edition: Edition | null = null) => (
+  const renderEditionForm = (edition: IEdition | null = null) => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">{edition ? "Modificar Edición" : "Crear una Edición"}</h3>
+      <h3 className="text-lg font-semibold">
+        {edition ? "Modificar Edición" : "Crear una Edición"}
+      </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Nombre de Edición</label>
-          <Input defaultValue={edition?.name || ""} />
+          <label className="block text-sm font-medium mb-2">
+            Nombre de Edición
+          </label>
+          <Input
+            defaultValue={edition?.name || ""}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Fecha de Inicio</label>
-          <Input type="date" defaultValue={edition?.startDate || ""} />
+          <label className="block text-sm font-medium mb-2">
+            Fecha de Inicio
+          </label>
+          <Input
+            type="date"
+            defaultValue={edition?.initial_date || ""}
+            onChange={(e) => handleInputChange("initial_date", e.target.value)}
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Fecha de Finalización</label>
-          <Input type="date" defaultValue={edition?.endDate || ""} />
+          <label className="block text-sm font-medium mb-2">
+            Fecha de Finalización
+          </label>
+
+          <Input
+            type="date"
+            defaultValue={edition?.end_date || ""}
+            onChange={(e) => handleInputChange("end_date", e.target.value)}
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Presidente General</label>
-          <Select defaultValue={edition?.president || ""}>
+          <label className="block text-sm font-medium mb-2">
+            Presidente General
+          </label>
+          <Select
+            defaultValue={edition?.presidentUserName}
+            onValueChange={(value) => handleInputChange("president", value)}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar" />
+              <SelectValue placeholder="Seleccionar Presidente" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Alejandro Torres">Alejandro Torres</SelectItem>
-              <SelectItem value="Miguel Ruiz">Miguel Ruiz</SelectItem>
-              <SelectItem value="Carlos Méndez">Carlos Méndez</SelectItem>
-              <SelectItem value="María López">María López</SelectItem>
+              {presidents.map((president) => (
+                <SelectItem key={president.userName} value={president.userName}>
+                  {`${president.name.first_name} ${president.name.first_surname}`}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Secretario General</label>
-          <Select defaultValue={edition?.secretary || ""}>
+          <label className="block text-sm font-medium mb-2">
+            Secretario General
+          </label>
+          <Select
+            defaultValue={edition?.secretaryUserName}
+            onValueChange={(value) => handleInputChange("secretary", value)}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar" />
+              <SelectValue placeholder="Seleccionar Secretario" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Miguel Ruiz">Miguel Ruiz</SelectItem>
-              <SelectItem value="Alejandro Torres">Alejandro Torres</SelectItem>
-              <SelectItem value="Ana Torres">Ana Torres</SelectItem>
-              <SelectItem value="Pedro Ramírez">Pedro Ramírez</SelectItem>
+              {secretaries.map((secretary) => (
+                <SelectItem key={secretary.userName} value={secretary.userName}>
+                  {`${secretary.name.first_name} ${secretary.name.first_surname}`}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -221,8 +335,11 @@ export default function EditionsPage() {
       <div className="flex gap-4">
         <Button
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            handleOnUpdate(
+              selectedItem?.id_edition ? selectedItem?.id_edition : 0
+            );
+            setSelectedItem(null);
           }}
         >
           {edition ? "Aceptar" : "Registrar"}
@@ -230,15 +347,15 @@ export default function EditionsPage() {
         <Button
           variant="outline"
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Cancelar
         </Button>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -250,13 +367,19 @@ export default function EditionsPage() {
               <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
                 <span className="text-white font-bold text-sm">XIII</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">Modelo de Naciones Unidas</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                Modelo de Naciones Unidas
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 font-medium">
                 Bienvenido, {sessionStorage.getItem("username") || "Usuario"}
               </span>
-              <Button variant="outline" onClick={handleLogout} className="border-gray-300 hover:bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="border-gray-300 hover:bg-gray-50"
+              >
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
               </Button>
@@ -297,8 +420,12 @@ export default function EditionsPage() {
               {/* Header Section */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-gray-900">Gestión de Ediciones</h2>
-                  <p className="text-gray-600 mt-1">Administre las ediciones del Modelo ONU</p>
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    Gestión de Ediciones
+                  </h2>
+                  <p className="text-gray-600 mt-1">
+                    Administre las ediciones del Modelo ONU
+                  </p>
                 </div>
                 <Button
                   className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all duration-200 transform hover:scale-105"
@@ -316,7 +443,9 @@ export default function EditionsPage() {
                     <div className="flex items-center space-x-3">
                       <Calendar className="h-8 w-8 text-blue-600" />
                       <div>
-                        <p className="text-2xl font-bold text-gray-900">{mockEditions.length}</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {mockEditions.length}
+                        </p>
                         <p className="text-sm text-gray-600">Total Ediciones</p>
                       </div>
                     </div>
@@ -329,7 +458,10 @@ export default function EditionsPage() {
                       <CalendarIcon className="h-8 w-8 text-green-600" />
                       <div>
                         <p className="text-2xl font-bold text-gray-900">
-                          {mockEditions.reduce((sum, edition) => sum + edition.days, 0)}
+                          {mockEditions.reduce(
+                            (sum, edition) => sum + edition.duration,
+                            0
+                          )}
                         </p>
                         <p className="text-sm text-gray-600">Días Totales</p>
                       </div>
@@ -382,11 +514,13 @@ export default function EditionsPage() {
                         <tr>
                           <th className="px-6 py-4 text-left">
                             <button
-                              onClick={() => handleSort("number")}
+                              //onClick={() => handleSort("number")}
                               className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                             >
                               <span>Número</span>
-                              {getSortIcon("number")}
+                              {
+                                //getSortIcon("number")
+                              }
                             </button>
                           </th>
                           <th className="px-6 py-4 text-left">
@@ -400,31 +534,31 @@ export default function EditionsPage() {
                           </th>
                           <th className="px-6 py-4 text-left">
                             <button
-                              onClick={() => handleSort("startDate")}
+                              //onClick={() => handleSort("startDate")}
                               className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                             >
                               <CalendarIcon className="w-4 h-4" />
                               <span>Fecha de Inicio</span>
-                              {getSortIcon("startDate")}
+                              {/*getSortIcon("startDate")*/}
                             </button>
                           </th>
                           <th className="px-6 py-4 text-left">
                             <button
-                              onClick={() => handleSort("endDate")}
+                              //onClick={() => handleSort("endDate")}
                               className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                             >
                               <CalendarIcon className="w-4 h-4" />
                               <span>Fecha de Finalización</span>
-                              {getSortIcon("endDate")}
+                              {/*getSortIcon("endDate")*/}
                             </button>
                           </th>
                           <th className="px-6 py-4 text-left">
                             <button
-                              onClick={() => handleSort("days")}
+                              //onClick={() => handleSort("days")}
                               className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
                             >
                               <span>Días</span>
-                              {getSortIcon("days")}
+                              {/*getSortIcon("days")*/}
                             </button>
                           </th>
                           <th className="px-6 py-4 text-left">
@@ -446,20 +580,39 @@ export default function EditionsPage() {
                             </button>
                           </th>
                           <th className="px-6 py-4 text-left">
-                            <span className="text-sm font-semibold text-gray-900">Acciones</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              Acciones
+                            </span>
                           </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
                         {paginatedEditions.map((edition) => (
-                          <tr key={edition.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{edition.number}</td>
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{edition.name}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{edition.startDate}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{edition.endDate}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{edition.days}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{edition.president}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{edition.secretary}</td>
+                          <tr
+                            key={edition.id_edition}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {edition.id_edition}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {edition.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {edition.initial_date}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {edition.end_date}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {edition.duration}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {edition.president}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {edition.secretary}
+                            </td>
                             <td className="px-6 py-4">
                               <div className="flex gap-2">
                                 <Button
@@ -467,8 +620,8 @@ export default function EditionsPage() {
                                   variant="outline"
                                   className="border-blue-300 hover:bg-blue-50 text-blue-700"
                                   onClick={() => {
-                                    setSelectedItem(edition)
-                                    setIsEditing(true)
+                                    setSelectedItem(edition);
+                                    setIsEditing(true);
                                   }}
                                 >
                                   <Edit className="w-4 h-4" />
@@ -477,6 +630,9 @@ export default function EditionsPage() {
                                   size="sm"
                                   variant="outline"
                                   className="border-red-300 hover:bg-red-50 text-red-700"
+                                  onClick={() =>
+                                    handleDelete(edition.id_edition)
+                                  }
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -493,14 +649,19 @@ export default function EditionsPage() {
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-700">
                         Mostrando {startIndex + 1} a{" "}
-                        {Math.min(startIndex + itemsPerPage, filteredAndSortedEditions.length)} de{" "}
-                        {filteredAndSortedEditions.length} resultados
+                        {Math.min(
+                          startIndex + itemsPerPage,
+                          filteredAndSortedEditions.length
+                        )}{" "}
+                        de {filteredAndSortedEditions.length} resultados
                       </div>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          onClick={() =>
+                            setCurrentPage(Math.max(1, currentPage - 1))
+                          }
                           disabled={currentPage === 1}
                           className="border-gray-300"
                         >
@@ -512,8 +673,14 @@ export default function EditionsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages || totalPages === 0}
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.min(totalPages, currentPage + 1)
+                            )
+                          }
+                          disabled={
+                            currentPage === totalPages || totalPages === 0
+                          }
                           className="border-gray-300"
                         >
                           Siguiente
@@ -528,5 +695,5 @@ export default function EditionsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
