@@ -1,14 +1,20 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Users,
   Calendar,
@@ -25,29 +31,46 @@ import {
   UserCheck,
   Clock,
   CheckCircle,
-} from "lucide-react"
+} from "lucide-react";
+import {
+  getIdentity,
+  getIsAuthenticated,
+  getStorageUsername,
+  getToken,
+} from "@/lib/utils";
 
 export default function Dashboard() {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState("overview")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedItem, setSelectedItem] = useState<any>(null)
-  const [isEditing, setIsEditing] = useState(false)
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  //SessionStorge Variables
+  const [identity, setIdentity] = useState<string | null>("");
+  const [token, setToken] = useState<string | null>("");
+  const [storageUsername, setStorageUserName] = useState<string | null>("");
+  const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("authenticated") || sessionStorage.getItem("authenticated")
-    if (!isAuthenticated) {
-      router.push("/")
+    setIsAuthenticated(getIsAuthenticated());
+    setIdentity(getIdentity());
+    setToken(getToken());
+    setStorageUserName(getStorageUsername());
+  }, [router]);
+
+  useEffect(() => {
+    if (isAuthenticated === null) {
+      router.push("/");
+      return; // Detiene la ejecución si no está autenticado
     }
-  }, [router])
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("authenticated")
-    sessionStorage.removeItem("username")
-    sessionStorage.removeItem("authenticated")
-    sessionStorage.removeItem("username")
-    router.push("/")
-  }
+    sessionStorage.removeItem("authenticated");
+    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("token");
+    router.push("/");
+  };
 
   const navigationTabs = [
     { id: "overview", label: "Resumen General", icon: BarChart3 },
@@ -57,7 +80,7 @@ export default function Dashboard() {
     { id: "voting", label: "Gestionar Votaciones", icon: Vote },
     { id: "roles", label: "Gestionar Roles", icon: Settings },
     { id: "profile", label: "Mi Perfil", icon: UserCheck },
-  ]
+  ];
 
   // Mock data
   const mockUsers = [
@@ -87,7 +110,7 @@ export default function Dashboard() {
       country: "Australia",
       role: "Presidente",
     },
-  ]
+  ];
 
   const mockEditions = [
     {
@@ -108,7 +131,7 @@ export default function Dashboard() {
       president: "Alejandro Torres",
       secretary: "Miguel Ruiz",
     },
-  ]
+  ];
 
   const mockCommissions = [
     {
@@ -135,7 +158,7 @@ export default function Dashboard() {
         { name: "Holanda", representative: "Paola Melian", selected: true },
       ],
     },
-  ]
+  ];
 
   const mockVotings = [
     {
@@ -160,7 +183,7 @@ export default function Dashboard() {
       abstention: 0,
       status: "Abierta",
     },
-  ]
+  ];
 
   const renderOverview = () => (
     <div className="space-y-6">
@@ -224,14 +247,18 @@ export default function Dashboard() {
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <div>
-                  <p className="font-medium">Votación "Electorales2" finalizada</p>
+                  <p className="font-medium">
+                    Votación "Electorales2" finalizada
+                  </p>
                   <p className="text-sm text-gray-600">Hace 2 horas</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <Clock className="h-5 w-5 text-blue-600" />
                 <div>
-                  <p className="font-medium">Votación "Municipal21" en progreso</p>
+                  <p className="font-medium">
+                    Votación "Municipal21" en progreso
+                  </p>
                   <p className="text-sm text-gray-600">Hace 1 hora</p>
                 </div>
               </div>
@@ -269,7 +296,7 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
-  )
+  );
 
   const renderProfile = () => (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -280,15 +307,21 @@ export default function Dashboard() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Nombre de Usuario</label>
+              <label className="block text-sm font-medium mb-2">
+                Nombre de Usuario
+              </label>
               <Input value="juanp" disabled />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Correo Electrónico</label>
+              <label className="block text-sm font-medium mb-2">
+                Correo Electrónico
+              </label>
               <Input value="Juan@gmail.com" disabled />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Nombre Completo</label>
+              <label className="block text-sm font-medium mb-2">
+                Nombre Completo
+              </label>
               <Input value="Juan Hernandez Gonzales" disabled />
             </div>
             <div>
@@ -300,7 +333,9 @@ export default function Dashboard() {
               <Input value="Presidente" disabled />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Fecha de Expiración</label>
+              <label className="block text-sm font-medium mb-2">
+                Fecha de Expiración
+              </label>
               <Input value="2026-04-04" disabled />
             </div>
           </div>
@@ -310,27 +345,37 @@ export default function Dashboard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 
   const renderUserForm = (user: any = null) => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">{user ? "Modificar Usuario" : "Añadir Nuevo Usuario"}</h3>
+      <h3 className="text-lg font-semibold">
+        {user ? "Modificar Usuario" : "Añadir Nuevo Usuario"}
+      </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Primer Nombre</label>
+          <label className="block text-sm font-medium mb-2">
+            Primer Nombre
+          </label>
           <Input defaultValue={user?.firstName || ""} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Primer Apellido</label>
+          <label className="block text-sm font-medium mb-2">
+            Primer Apellido
+          </label>
           <Input defaultValue={user?.lastName || ""} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Segundo Nombre</label>
+          <label className="block text-sm font-medium mb-2">
+            Segundo Nombre
+          </label>
           <Input defaultValue={user?.secondName || ""} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Segundo Apellido</label>
+          <label className="block text-sm font-medium mb-2">
+            Segundo Apellido
+          </label>
           <Input defaultValue={user?.secondLastName || ""} />
         </div>
         <div>
@@ -372,8 +417,8 @@ export default function Dashboard() {
       <div className="flex gap-4">
         <Button
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           {user ? "Aceptar" : "Registrar"}
@@ -381,38 +426,48 @@ export default function Dashboard() {
         <Button
           variant="outline"
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Cancelar
         </Button>
       </div>
     </div>
-  )
+  );
 
   const renderEditionForm = (edition: any = null) => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">{edition ? "Modificar Edición" : "Crear una Edición"}</h3>
+      <h3 className="text-lg font-semibold">
+        {edition ? "Modificar Edición" : "Crear una Edición"}
+      </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Nombre de Edición</label>
+          <label className="block text-sm font-medium mb-2">
+            Nombre de Edición
+          </label>
           <Input defaultValue={edition?.name || ""} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Fecha de Inicio</label>
+          <label className="block text-sm font-medium mb-2">
+            Fecha de Inicio
+          </label>
           <Input type="date" defaultValue={edition?.startDate || ""} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Fecha de Finalización</label>
+          <label className="block text-sm font-medium mb-2">
+            Fecha de Finalización
+          </label>
           <Input type="date" defaultValue={edition?.endDate || ""} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Presidente General</label>
+          <label className="block text-sm font-medium mb-2">
+            Presidente General
+          </label>
           <Select defaultValue={edition?.president || ""}>
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar" />
@@ -424,7 +479,9 @@ export default function Dashboard() {
           </Select>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Secretario General</label>
+          <label className="block text-sm font-medium mb-2">
+            Secretario General
+          </label>
           <Select defaultValue={edition?.secretary || ""}>
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar" />
@@ -440,8 +497,8 @@ export default function Dashboard() {
       <div className="flex gap-4">
         <Button
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           {edition ? "Aceptar" : "Registrar"}
@@ -449,19 +506,21 @@ export default function Dashboard() {
         <Button
           variant="outline"
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Cancelar
         </Button>
       </div>
     </div>
-  )
+  );
 
   const renderCommissionForm = (commission: any = null) => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">{commission ? "Modificar una Comisión" : "Crear una Comisión"}</h3>
+      <h3 className="text-lg font-semibold">
+        {commission ? "Modificar una Comisión" : "Crear una Comisión"}
+      </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -543,8 +602,8 @@ export default function Dashboard() {
       <div className="flex gap-4">
         <Button
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Registrar
@@ -552,19 +611,21 @@ export default function Dashboard() {
         <Button
           variant="outline"
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Cancelar
         </Button>
       </div>
     </div>
-  )
+  );
 
   const renderVotingForm = (voting: any = null) => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">{voting ? "Modificar Votación" : "Crear una Votación"}</h3>
+      <h3 className="text-lg font-semibold">
+        {voting ? "Modificar Votación" : "Crear una Votación"}
+      </h3>
 
       <div className="grid grid-cols-1 gap-4">
         <div>
@@ -580,8 +641,8 @@ export default function Dashboard() {
       <div className="flex gap-4">
         <Button
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Registrar
@@ -589,15 +650,15 @@ export default function Dashboard() {
         <Button
           variant="outline"
           onClick={() => {
-            setIsEditing(false)
-            setSelectedItem(null)
+            setIsEditing(false);
+            setSelectedItem(null);
           }}
         >
           Cancelar
         </Button>
       </div>
     </div>
-  )
+  );
 
   const renderUserManagement = () => (
     <div className="space-y-6">
@@ -607,7 +668,10 @@ export default function Dashboard() {
         <>
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Listado de Usuarios</h2>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsEditing(true)}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setIsEditing(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Añadir Nuevo Usuario
             </Button>
@@ -632,8 +696,12 @@ export default function Dashboard() {
                   <th className="px-4 py-3 text-left font-medium">Correo</th>
                   <th className="px-4 py-3 text-left font-medium">Usuario</th>
                   <th className="px-4 py-3 text-left font-medium">Nombre</th>
-                  <th className="px-4 py-3 text-left font-medium">Fecha de Creación</th>
-                  <th className="px-4 py-3 text-left font-medium">Fecha de Expiración</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Fecha de Creación
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Fecha de Expiración
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">País</th>
                   <th className="px-4 py-3 text-left font-medium">Rol</th>
                   <th className="px-4 py-3 text-left font-medium">Acciones</th>
@@ -641,7 +709,12 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {mockUsers.map((user, index) => (
-                  <tr key={index} className={`border-t ${selectedItem === user ? "bg-blue-100" : ""}`}>
+                  <tr
+                    key={index}
+                    className={`border-t ${
+                      selectedItem === user ? "bg-blue-100" : ""
+                    }`}
+                  >
                     <td className="px-4 py-3">{user.email}</td>
                     <td className="px-4 py-3">{user.username}</td>
                     <td className="px-4 py-3">{user.name}</td>
@@ -658,8 +731,8 @@ export default function Dashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSelectedItem(user)
-                            setIsEditing(true)
+                            setSelectedItem(user);
+                            setIsEditing(true);
                           }}
                         >
                           <Edit className="w-4 h-4" />
@@ -683,7 +756,7 @@ export default function Dashboard() {
         </>
       )}
     </div>
-  )
+  );
 
   const renderEditionManagement = () => (
     <div className="space-y-6">
@@ -693,7 +766,10 @@ export default function Dashboard() {
         <>
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Listado de Ediciones</h2>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsEditing(true)}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setIsEditing(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Crear una Edición
             </Button>
@@ -717,15 +793,24 @@ export default function Dashboard() {
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Número</th>
                   <th className="px-4 py-3 text-left font-medium">Nombre</th>
-                  <th className="px-4 py-3 text-left font-medium">Fecha de Inicio</th>
-                  <th className="px-4 py-3 text-left font-medium">Fecha de Finalización</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Fecha de Inicio
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Fecha de Finalización
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Días</th>
                   <th className="px-4 py-3 text-left font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {mockEditions.map((edition, index) => (
-                  <tr key={index} className={`border-t ${selectedItem === edition ? "bg-blue-100" : ""}`}>
+                  <tr
+                    key={index}
+                    className={`border-t ${
+                      selectedItem === edition ? "bg-blue-100" : ""
+                    }`}
+                  >
                     <td className="px-4 py-3">{edition.number}</td>
                     <td className="px-4 py-3">{edition.name}</td>
                     <td className="px-4 py-3">{edition.startDate}</td>
@@ -740,8 +825,8 @@ export default function Dashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSelectedItem(edition)
-                            setIsEditing(true)
+                            setSelectedItem(edition);
+                            setIsEditing(true);
                           }}
                         >
                           <Edit className="w-4 h-4" />
@@ -762,7 +847,7 @@ export default function Dashboard() {
         </>
       )}
     </div>
-  )
+  );
 
   const renderCommissionManagement = () => (
     <div className="space-y-6">
@@ -772,7 +857,10 @@ export default function Dashboard() {
         <>
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Listado de Comisiones</h2>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsEditing(true)}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setIsEditing(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Crear una Comisión
             </Button>
@@ -796,21 +884,36 @@ export default function Dashboard() {
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Número</th>
                   <th className="px-4 py-3 text-left font-medium">Nombre</th>
-                  <th className="px-4 py-3 text-left font-medium">Presidente</th>
-                  <th className="px-4 py-3 text-left font-medium">Secretario</th>
-                  <th className="px-4 py-3 text-left font-medium">#Países Asociados</th>
-                  <th className="px-4 py-3 text-left font-medium">#Votaciones</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Presidente
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Secretario
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    #Países Asociados
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    #Votaciones
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {mockCommissions.map((commission, index) => (
-                  <tr key={index} className={`border-t ${selectedItem === commission ? "bg-blue-100" : ""}`}>
+                  <tr
+                    key={index}
+                    className={`border-t ${
+                      selectedItem === commission ? "bg-blue-100" : ""
+                    }`}
+                  >
                     <td className="px-4 py-3">{commission.number}</td>
                     <td className="px-4 py-3">{commission.name}</td>
                     <td className="px-4 py-3">{commission.president}</td>
                     <td className="px-4 py-3">{commission.secretary}</td>
-                    <td className="px-4 py-3">{commission.associatedCountries}</td>
+                    <td className="px-4 py-3">
+                      {commission.associatedCountries}
+                    </td>
                     <td className="px-4 py-3">{commission.votes}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
@@ -821,8 +924,8 @@ export default function Dashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSelectedItem(commission)
-                            setIsEditing(true)
+                            setSelectedItem(commission);
+                            setIsEditing(true);
                           }}
                         >
                           <Edit className="w-4 h-4" />
@@ -843,7 +946,7 @@ export default function Dashboard() {
         </>
       )}
     </div>
-  )
+  );
 
   const renderVotingManagement = () => (
     <div className="space-y-6">
@@ -852,8 +955,13 @@ export default function Dashboard() {
       ) : (
         <>
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Listado de Votaciones Comisión de Asamblea General</h2>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsEditing(true)}>
+            <h2 className="text-2xl font-bold">
+              Listado de Votaciones Comisión de Asamblea General
+            </h2>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setIsEditing(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Crear una Votación
             </Button>
@@ -878,18 +986,27 @@ export default function Dashboard() {
                   <th className="px-4 py-3 text-left font-medium">Número</th>
                   <th className="px-4 py-3 text-left font-medium">Comisión</th>
                   <th className="px-4 py-3 text-left font-medium">Nombre</th>
-                  <th className="px-4 py-3 text-left font-medium">Descripción</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Descripción
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Resultado</th>
                   <th className="px-4 py-3 text-left font-medium">A favor</th>
                   <th className="px-4 py-3 text-left font-medium">En contra</th>
-                  <th className="px-4 py-3 text-left font-medium">Abstención</th>
+                  <th className="px-4 py-3 text-left font-medium">
+                    Abstención
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Estado</th>
                   <th className="px-4 py-3 text-left font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {mockVotings.map((voting, index) => (
-                  <tr key={index} className={`border-t ${selectedItem === voting ? "bg-blue-100" : ""}`}>
+                  <tr
+                    key={index}
+                    className={`border-t ${
+                      selectedItem === voting ? "bg-blue-100" : ""
+                    }`}
+                  >
                     <td className="px-4 py-3">{voting.number}</td>
                     <td className="px-4 py-3">{voting.commission}</td>
                     <td className="px-4 py-3">{voting.name}</td>
@@ -899,7 +1016,13 @@ export default function Dashboard() {
                     <td className="px-4 py-3">{voting.against}</td>
                     <td className="px-4 py-3">{voting.abstention}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={voting.status === "Abierta" ? "default" : "secondary"}>{voting.status}</Badge>
+                      <Badge
+                        variant={
+                          voting.status === "Abierta" ? "default" : "secondary"
+                        }
+                      >
+                        {voting.status}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
@@ -910,8 +1033,8 @@ export default function Dashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            setSelectedItem(voting)
-                            setIsEditing(true)
+                            setSelectedItem(voting);
+                            setIsEditing(true);
                           }}
                         >
                           <Edit className="w-4 h-4" />
@@ -932,26 +1055,26 @@ export default function Dashboard() {
         </>
       )}
     </div>
-  )
+  );
 
   const renderContent = () => {
     switch (activeTab) {
       case "overview":
-        return renderOverview()
+        return renderOverview();
       case "profile":
-        return renderProfile()
+        return renderProfile();
       case "users":
-        return renderUserManagement()
+        return renderUserManagement();
       case "editions":
-        return renderEditionManagement()
+        return renderEditionManagement();
       case "commissions":
-        return renderCommissionManagement()
+        return renderCommissionManagement();
       case "voting":
-        return renderVotingManagement()
+        return renderVotingManagement();
       default:
-        return renderOverview()
+        return renderOverview();
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
@@ -963,10 +1086,14 @@ export default function Dashboard() {
               <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">XIII</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">Modelo de Naciones Unidas</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                Modelo de Naciones Unidas
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Bienvenido, {sessionStorage.getItem("username") || "Usuario"}</span>
+              <span className="text-sm text-gray-600">
+                Bienvenido, {storageUsername || "Usuario"}
+              </span>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
@@ -984,12 +1111,14 @@ export default function Dashboard() {
               <button
                 key={tab.id}
                 onClick={() => {
-                  setActiveTab(tab.id)
-                  setIsEditing(false)
-                  setSelectedItem(null)
+                  setActiveTab(tab.id);
+                  setIsEditing(false);
+                  setSelectedItem(null);
                 }}
                 className={`px-4 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
-                  activeTab === tab.id ? "bg-blue-600 text-white" : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  activeTab === tab.id
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 <tab.icon className="w-4 h-4 inline mr-2" />
@@ -1001,7 +1130,9 @@ export default function Dashboard() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{renderContent()}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderContent()}
+      </main>
     </div>
-  )
+  );
 }

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
-import { socket } from "@/lib/utils";
+import { getIdentity, socket } from "@/lib/utils";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -36,16 +36,16 @@ export default function LoginPage() {
         {
           userName: username,
           code_access: accessCode,
-          identity: sessionStorage.getItem("identity"),
+          identity: getIdentity(),
         },
         (response: any) => {
           if (response.success) {
             sessionStorage.setItem("authenticated", "true");
             sessionStorage.setItem("username", username);
             sessionStorage.setItem("token", response.token);
+
             window.location.href = "/users";
           } else {
-            sessionStorage.setItem("authenticated", "false");
             setError(response.message);
           }
         }

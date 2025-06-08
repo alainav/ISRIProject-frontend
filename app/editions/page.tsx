@@ -32,7 +32,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { IEdition } from "@/interfaces/IEdition";
-import { socket } from "@/lib/utils";
+import {
+  getIdentity,
+  getIsAuthenticated,
+  getStorageUsername,
+  getToken,
+  socket,
+} from "@/lib/utils";
 import { IUser } from "@/interfaces/IUser";
 
 type SortField =
@@ -50,8 +56,8 @@ const loadEditions = (setMockEditions: Function, currentPage: number) => {
   socket.emit(
     "list-editions",
     {
-      token: sessionStorage.getItem("token"),
-      identity: sessionStorage.getItem("identity"),
+      token: getToken(),
+      identity: getIdentity(),
       page: currentPage,
     },
     (response: any) => {
@@ -64,8 +70,6 @@ const loadEditions = (setMockEditions: Function, currentPage: number) => {
 
 export default function EditionsPage() {
   const router = useRouter();
-  const identity = sessionStorage.getItem("identity");
-  const token = sessionStorage.getItem("token");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -77,18 +81,19 @@ export default function EditionsPage() {
   const [presidents, setPresidents] = useState<IUser[]>([]);
   const [secretaries, setSecretaries] = useState<IUser[]>([]);
 
+  const [storageUsername, setStorageUserName] = useState<string | null>("");
+  const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
+
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("authenticated");
-    if (!isAuthenticated) {
-      router.push("/");
-    }
+    setIsAuthenticated(getIsAuthenticated());
+    setStorageUserName(getStorageUsername());
 
     const loadDeputies = (deputy: string) => {
       socket.emit(
         `get-list-general-${deputy}`,
         {
-          token: sessionStorage.getItem("token"),
-          identity: sessionStorage.getItem("identity"),
+          token: getToken(),
+          identity: getIdentity(),
           page: currentPage,
         },
         (response: any) => {
@@ -105,11 +110,17 @@ export default function EditionsPage() {
     loadDeputies("secretaries");
   }, [router, currentPage]);
 
+  useEffect(() => {
+    if (isAuthenticated === null) {
+      router.push("/");
+      return; // Detiene la ejecución si no está autenticado
+    }
+  }, [isAuthenticated]);
+
   const handleLogout = () => {
     sessionStorage.removeItem("authenticated");
     sessionStorage.removeItem("username");
     sessionStorage.removeItem("token");
-    sessionStorage.removeItem("username");
     router.push("/");
   };
 
@@ -125,26 +136,26 @@ export default function EditionsPage() {
 
       socket.emit(
         "update-edition",
-        { identity, token, id, ...sendEdition },
+        { identity: getIdentity(), token: getToken(), id, ...sendEdition },
         (response: any) => {
           if (response.success) {
             //Recargar a las ediciones
             loadEditions(setMockEditions, currentPage);
           } else {
-            console.log(response.message);
+            console.error(response.message);
           }
         }
       );
     } else {
       socket.emit(
         "create-edition",
-        { identity, token, ...selectedItem },
+        { identity: getIdentity(), token: getToken(), ...selectedItem },
         (response: any) => {
           if (response.success) {
             //Recargar a las ediciones
             loadEditions(setMockEditions, currentPage);
           } else {
-            console.log(response.message);
+            console.error(response.message);
           }
         }
       );
@@ -164,12 +175,16 @@ export default function EditionsPage() {
   };
 
   const handleDelete = (id: number) => {
-    socket.emit("delete-edition", { identity, token, id }, (response: any) => {
-      if (response.success) {
-        //Recargar a las ediciones
-        loadEditions(setMockEditions, currentPage);
+    socket.emit(
+      "delete-edition",
+      { identity: getIdentity(), token: getToken(), id },
+      (response: any) => {
+        if (response.success) {
+          //Recargar a las ediciones
+          loadEditions(setMockEditions, currentPage);
+        }
       }
-    });
+    );
   };
 
   const navigationTabs = [
@@ -222,26 +237,6 @@ export default function EditionsPage() {
       edition.secretary.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
-  /*.sort((a, b) => {
-      let aValue: string | number = a[sortField];
-      let bValue: string | number = b[sortField];
-
-      if (sortField === "startDate" || sortField === "endDate") {
-        aValue = new Date(aValue as string).getTime();
-        bValue = new Date(bValue as string).getTime();
-      }
-
-      if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = (bValue as string).toLowerCase();
-      }
-
-      if (sortDirection === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });*/
 
   const totalPages = Math.ceil(filteredAndSortedEditions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -373,7 +368,7 @@ export default function EditionsPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 font-medium">
-                Bienvenido, {sessionStorage.getItem("username") || "Usuario"}
+                Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"

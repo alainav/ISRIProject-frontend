@@ -55,6 +55,44 @@ let __formData: IFormData = {
 
 let __roles: IExtandar[] = [];
 let __countries: IExtandar[] = [];
+// Closure para encapsular las variables
+const authStore = (() => {
+  // Variables privadas
+
+  return {
+    getIdentity: () => {
+      if (typeof window !== "undefined") {
+        return sessionStorage.getItem("identity");
+      }
+      return null;
+    },
+    getToken: () => {
+      if (typeof window !== "undefined") {
+        return sessionStorage.getItem("token");
+      }
+      return null;
+    },
+    getStorageUsername: () => {
+      if (typeof window !== "undefined") {
+        return sessionStorage.getItem("username");
+      }
+      return null;
+    },
+    getIsAuthenticated: () => {
+      if (typeof window !== "undefined") {
+        return sessionStorage.getItem("authenticated");
+      }
+      return null;
+    },
+  };
+})();
+
+// Exportamos las funciones de acceso
+
+export const getIdentity = authStore.getIdentity;
+export const getToken = authStore.getToken;
+export const getStorageUsername = authStore.getStorageUsername;
+export const getIsAuthenticated = authStore.getIsAuthenticated;
 
 // Function to update user
 export const prepareAuxUser = (user: IUser) => {

@@ -34,7 +34,13 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { socket } from "@/lib/utils";
+import {
+  getIdentity,
+  getIsAuthenticated,
+  getStorageUsername,
+  getToken,
+  socket,
+} from "@/lib/utils";
 import { IFormData } from "@/interfaces/IFormData";
 
 interface FormErrors {
@@ -44,8 +50,6 @@ interface FormErrors {
 export default function NewUserPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<IFormData>({
-    identity: sessionStorage.getItem("identity"),
-    token: sessionStorage.getItem("token"),
     first_name: "",
     second_name: null,
     first_surname: "",
@@ -62,56 +66,62 @@ export default function NewUserPage() {
   const [countries, setCountries] = useState<{ id: number; name: string }[]>(
     []
   );
+  //SessionStorge Variables
+  const [storageUsername, setStorageUserName] = useState<string | null>("");
+  const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
-    const isAuthenticated =
-      sessionStorage.getItem("authenticated") ||
-      sessionStorage.getItem("authenticated");
-    if (!isAuthenticated) {
-      router.push("/");
-    } else {
-      // 3. Función para cargar los roles (separa la lógica)
-      const loadRoles = () => {
-        socket.emit(
-          "get-roles",
-          {
-            token: sessionStorage.getItem("token"),
-            identity: sessionStorage.getItem("identity"),
-          },
-          (response: any) => {
-            if (response.success) {
-              setRoles(response.roles);
-            }
-          }
-        );
-      };
+    setIsAuthenticated(getIsAuthenticated());
+    setStorageUserName(getStorageUsername());
 
-      // 4. Función para cargar los paises (separa la lógica)
-      const loadCountries = () => {
-        socket.emit(
-          "get-countries",
-          {
-            token: sessionStorage.getItem("token"),
-            identity: sessionStorage.getItem("identity"),
-          },
-          (response: any) => {
-            if (response.success) {
-              setCountries(response.countries);
-            }
+    setFormData({ ...formData, identity: getIdentity(), token: getToken() });
+    // 3. Función para cargar los roles (separa la lógica)
+    const loadRoles = () => {
+      socket.emit(
+        "get-roles",
+        {
+          token: getToken(),
+          identity: getIdentity(),
+        },
+        (response: any) => {
+          if (response.success) {
+            setRoles(response.roles);
           }
-        );
-      };
+        }
+      );
+    };
 
-      loadRoles();
-      loadCountries();
-    }
+    // 4. Función para cargar los paises (separa la lógica)
+    const loadCountries = () => {
+      socket.emit(
+        "get-countries",
+        {
+          token: getToken(),
+          identity: getIdentity(),
+        },
+        (response: any) => {
+          if (response.success) {
+            setCountries(response.countries);
+          }
+        }
+      );
+    };
+
+    loadRoles();
+    loadCountries();
   }, [router]);
+
+  useEffect(() => {
+    if (isAuthenticated === null) {
+      router.push("/");
+      return; // Detiene la ejecución si no está autenticado
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("authenticated");
     sessionStorage.removeItem("username");
-    sessionStorage.removeItem("authenticated");
-    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("token");
     router.push("/");
   };
 
@@ -230,7 +240,7 @@ export default function NewUserPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 font-medium">
-                Bienvenido, {sessionStorage.getItem("username") || "Usuario"}
+                Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"

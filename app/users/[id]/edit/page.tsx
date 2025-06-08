@@ -42,10 +42,13 @@ import {
   getAuxCountries,
   getAuxRoles,
   getAuxUser,
-  prepareAuxUser,
-  socket,
+  getIdentity,
+  getIsAuthenticated,
+  getStorageUsername,
+  getToken,
 } from "@/lib/utils";
 import { IFormData } from "@/interfaces/IFormData";
+import { socket } from "@/lib/utils";
 
 interface FormErrors {
   [key: string]: string;
@@ -63,22 +66,32 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
   const [message, setMessage] = useState(
     "Usuario actualizado exitosamente. Redirigiendo a la lista de usuarios..."
   );
+  //SessionStorge Variables
+  const [identity, setIdentity] = useState<string | null>("");
+  const [token, setToken] = useState<string | null>("");
+  const [storageUsername, setStorageUserName] = useState<string | null>("");
+  const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem("authenticated");
-    if (!isAuthenticated) {
-      router.push("/");
-      return;
-    }
+    setIsAuthenticated(getIsAuthenticated());
+    setIdentity(getIdentity());
+    setToken(getToken());
+    setStorageUserName(getStorageUsername());
 
     setIsLoading(false);
   }, [router]);
+
+  useEffect(() => {
+    if (isAuthenticated === null) {
+      router.push("/");
+      return; // Detiene la ejecución si no está autenticado
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("authenticated");
     sessionStorage.removeItem("username");
     sessionStorage.removeItem("token");
-    sessionStorage.removeItem("username");
     router.push("/");
   };
 
@@ -190,8 +203,8 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         ...formData,
         role: formData.role.id,
         country: formData.country.id,
-        token: sessionStorage.getItem("token"),
-        identity: sessionStorage.getItem("identity"),
+        token: getToken(),
+        identity: getIdentity(),
       },
       (res: any) => {
         setIsSubmitting(false);
@@ -262,7 +275,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 font-medium">
-                Bienvenido, {sessionStorage.getItem("username") || "Usuario"}
+                Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"

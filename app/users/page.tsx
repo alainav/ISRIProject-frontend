@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
+  getIdentity,
+  getIsAuthenticated,
+  getStorageUsername,
+  getToken,
   prepareAuxCountry,
   prepareAuxRole,
   prepareAuxUser,
@@ -51,17 +55,25 @@ type SortField = "userName" | "email" | "creationDate" | "expirationDate";
 type SortDirection = "asc" | "desc";
 
 // 2. Función para cargar diputados (separa la lógica)
-const loadDeputies = (setMockUsers: Function, currentPage: number) => {
+const loadDeputies = (
+  setMockUsers: Function,
+  setTotals: Function,
+  currentPage: number
+) => {
   socket.emit(
     "list-all-deputies",
     {
-      token: sessionStorage.getItem("token"),
-      identity: sessionStorage.getItem("identity"),
+      token: getToken(),
+      identity: getIdentity(),
       page: currentPage,
     },
     (response: any) => {
       if (response.success) {
         setMockUsers(response.deputies);
+        setTotals({
+          totalPages: response.paginated.total_pages,
+          totalCount: response.paginated.total_count,
+        });
       }
     }
   );
@@ -69,8 +81,6 @@ const loadDeputies = (setMockUsers: Function, currentPage: number) => {
 
 export default function UsersPage() {
   const router = useRouter();
-  const identity = sessionStorage.getItem("identity");
-  const token = sessionStorage.getItem("token");
   const [searchTerm, setSearchTerm] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -84,24 +94,28 @@ export default function UsersPage() {
   const [countries, setCountries] = useState<{ id: number; name: string }[]>(
     []
   );
-
-  // Enhanced mock data with more users and better variety
+  const [totals, setTotals] = useState<{
+    totalPages: number;
+    totalCount: number;
+  }>({ totalPages: 0, totalCount: 0 });
+  const [startIndex, setStartIndex] = useState<number>(0);
+  const [filteredAndSortedUsers, setFilterUsers] = useState<IUser[]>([]);
+  //SessionStorge Variables
+  const [storageUsername, setStorageUserName] = useState<string | null>("");
+  const [isAuthenticated, setAuthenticated] = useState<string | null>();
 
   useEffect(() => {
     // 1. Verificación inicial de autenticación (se ejecuta primero)
-    const isAuthenticated = sessionStorage.getItem("authenticated");
-    if (!isAuthenticated) {
-      router.push("/");
-      return; // Detiene la ejecución si no está autenticado
-    }
+    setAuthenticated(getIsAuthenticated());
+    setStorageUserName(getStorageUsername());
 
     // 3. Función para cargar los roles (separa la lógica)
     const loadRoles = () => {
       socket.emit(
         "get-roles",
         {
-          token: sessionStorage.getItem("token"),
-          identity: sessionStorage.getItem("identity"),
+          token: getToken(),
+          identity: getIdentity(),
           page: currentPage,
         },
         (response: any) => {
@@ -118,8 +132,8 @@ export default function UsersPage() {
       socket.emit(
         "get-countries",
         {
-          token: sessionStorage.getItem("token"),
-          identity: sessionStorage.getItem("identity"),
+          token: getToken(),
+          identity: getIdentity(),
           page: currentPage,
         },
         (response: any) => {
@@ -131,26 +145,45 @@ export default function UsersPage() {
       );
     };
 
-    loadDeputies(setMockUsers, currentPage);
+    loadDeputies(setMockUsers, setTotals, currentPage);
     loadRoles();
     loadCountries();
-  }, [router, currentPage, socket]); // Agrega todas las dependencias necesarias
+  }, [router, socket]); // Agrega todas las dependencias necesarias
+
+  useEffect(() => {
+    if (isAuthenticated === null) {
+      router.push("/");
+      return; // Detiene la ejecución si no está autenticado
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadDeputies(setMockUsers, setTotals, currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    const filtered = prepareFilterDeputies();
+    setFilterUsers(filtered);
+  }, [mockUsers, searchTerm, countryFilter, roleFilter, statusFilter]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("authenticated");
     sessionStorage.removeItem("username");
     sessionStorage.removeItem("token");
-    sessionStorage.removeItem("username");
     router.push("/");
   };
 
   const handleDelete = (userName: string, eventName: string) => {
-    socket.emit(eventName, { identity, token, userName }, (response: any) => {
-      if (response.success) {
-        //Recargar a los representantes
-        loadDeputies(setMockUsers, currentPage);
+    socket.emit(
+      eventName,
+      { identity: getIdentity(), token: getToken(), userName },
+      (response: any) => {
+        if (response.success) {
+          //Recargar a los representantes
+          loadDeputies(setMockUsers, setTotals, currentPage);
+        }
       }
-    });
+    );
   };
 
   const navigationTabs = [
@@ -201,18 +234,21 @@ export default function UsersPage() {
     );
   };
 
-  const filteredAndSortedUsers = mockUsers.filter((user) => {
-    const matchesSearch =
-      user.name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.userName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCountry =
-      !countryFilter || user.country.name === countryFilter;
-    const matchesRole = !roleFilter || user.role.name === roleFilter;
-    const matchesStatus = !statusFilter || user.status === statusFilter;
+  const prepareFilterDeputies = () => {
+    return mockUsers.filter((user) => {
+      const matchesSearch =
+        user.name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.userName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCountry =
+        !countryFilter || user.country.name === countryFilter;
+      const matchesRole = !roleFilter || user.role.name === roleFilter;
+      const matchesStatus = !statusFilter || user.status === statusFilter;
 
-    return matchesSearch && matchesCountry && matchesRole && matchesStatus;
-  });
+      return matchesSearch && matchesCountry && matchesRole && matchesStatus;
+    });
+  };
+
   /*.sort((a, b) => {
       let aValue: string | number = a[sortField];
       let bValue: string | number = b[sortField];
@@ -234,12 +270,10 @@ export default function UsersPage() {
       }
     });*/
 
-  const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = filteredAndSortedUsers.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const paginatedUsers = useMemo(() => {
+    setStartIndex((currentPage - 1) * 10);
+    return filteredAndSortedUsers.slice(0, itemsPerPage);
+  }, [filteredAndSortedUsers, currentPage, itemsPerPage]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -290,7 +324,7 @@ export default function UsersPage() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600 font-medium">
-                Bienvenido, {sessionStorage.getItem("username") || "Usuario"}
+                Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"
@@ -356,7 +390,7 @@ export default function UsersPage() {
                   <Users className="h-8 w-8 text-blue-600" />
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
-                      {mockUsers.length}
+                      {totals.totalCount}
                     </p>
                     <p className="text-sm text-gray-600">
                       Total Representantes
@@ -497,8 +531,8 @@ export default function UsersPage() {
 
               <div className="flex justify-between items-center pt-2">
                 <p className="text-sm text-gray-600">
-                  Mostrando {paginatedUsers.length} de{" "}
-                  {filteredAndSortedUsers.length} usuarios
+                  Mostrando {paginatedUsers.length} de {totals.totalCount}{" "}
+                  representantes
                 </p>
                 <Button
                   variant="outline"
@@ -682,11 +716,8 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-700">
                     Mostrando {startIndex + 1} a{" "}
-                    {Math.min(
-                      startIndex + itemsPerPage,
-                      filteredAndSortedUsers.length
-                    )}{" "}
-                    de {filteredAndSortedUsers.length} resultados
+                    {Math.min(startIndex + 10, totals.totalCount)} de{" "}
+                    {totals.totalCount} resultados
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -701,15 +732,17 @@ export default function UsersPage() {
                       Anterior
                     </Button>
                     <span className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded">
-                      {currentPage} / {totalPages}
+                      {currentPage} / {totals.totalPages}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        setCurrentPage(Math.min(totalPages, currentPage + 1))
+                        setCurrentPage(
+                          Math.min(totals.totalPages, currentPage + 1)
+                        )
                       }
-                      disabled={currentPage === totalPages}
+                      disabled={currentPage === totals.totalPages}
                       className="border-gray-300"
                     >
                       Siguiente

@@ -1,23 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, X, Minus, ArrowLeft } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 
 export default function VotingPage({ params }: { params: { id: string } }) {
   const [selectedVote, setSelectedVote] = useState<string | null>(null)
   const [hasVoted, setHasVoted] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [])
 
   const handleVote = (voteType: string) => {
     setSelectedVote(voteType)
@@ -30,186 +20,194 @@ export default function VotingPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const countries = [
-    { name: "Cuba", vote: "yes" },
-    { name: "Noruega", vote: "no" },
-    { name: "Alemania", vote: "abstention" },
-    { name: "Brazil", vote: "abstention" },
-    { name: "México", vote: "yes" },
-    { name: "Ecuador", vote: "no" },
-  ]
-
-  const getVoteIcon = (vote: string) => {
-    switch (vote) {
-      case "yes":
-        return <Check className="w-5 h-5 text-green-600" />
-      case "no":
-        return <X className="w-5 h-5 text-red-600" />
-      case "abstention":
-        return <Minus className="w-5 h-5 text-yellow-600" />
-      default:
-        return null
-    }
-  }
-
-  const results = {
-    inFavor: 14,
-    against: 14,
-    abstention: 14,
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver
-                </Button>
-              </Link>
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">XIII</span>
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">Gestionar Votaciones</h1>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-600">
-                {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #87CEEB 0%, #B0E0E6 100%)" }}>
+      {/* Simple Header with Back Button */}
+      <header className="p-6">
+        <div className="max-w-6xl mx-auto">
+          <Link href="/voting">
+            <Button variant="outline" className="bg-white/90 hover:bg-white shadow-md border-0 font-medium">
+              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M12 19L5 12L12 5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Volver
+            </Button>
+          </Link>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!hasVoted ? (
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
+          <CardContent className="p-12">
+            <div className="text-center mb-12">
+              <h1 className="text-4xl font-bold text-gray-800 mb-4">
                 Votación sobre el uso correcto de los equipos médicos en la salud
-              </CardTitle>
-              <p className="text-gray-600">Se realiza la votación según la resolución 505/21 del MINSAP</p>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card
-                  className={`cursor-pointer transition-all ${
-                    selectedVote === "yes" ? "ring-2 ring-green-500 bg-green-50" : "hover:shadow-md"
-                  }`}
-                  onClick={() => handleVote("yes")}
-                >
-                  <CardContent className="flex flex-col items-center justify-center p-8">
-                    <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                      <Check className="w-12 h-12 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold">Sí</h3>
-                  </CardContent>
-                </Card>
-
-                <Card
-                  className={`cursor-pointer transition-all ${
-                    selectedVote === "no" ? "ring-2 ring-red-500 bg-red-50" : "hover:shadow-md"
-                  }`}
-                  onClick={() => handleVote("no")}
-                >
-                  <CardContent className="flex flex-col items-center justify-center p-8">
-                    <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mb-4">
-                      <X className="w-12 h-12 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold">No</h3>
-                  </CardContent>
-                </Card>
-
-                <Card
-                  className={`cursor-pointer transition-all ${
-                    selectedVote === "abstention" ? "ring-2 ring-yellow-500 bg-yellow-50" : "hover:shadow-md"
-                  }`}
-                  onClick={() => handleVote("abstention")}
-                >
-                  <CardContent className="flex flex-col items-center justify-center p-8">
-                    <div className="w-24 h-24 bg-yellow-500 rounded-full flex items-center justify-center mb-4">
-                      <Minus className="w-12 h-12 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold">Abstención</h3>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="text-center">
-                <Button
-                  onClick={submitVote}
-                  disabled={!selectedVote}
-                  className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
-                >
-                  Votar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-8">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-2xl">
-                    Votación sobre el uso correcto de los equipos médicos en la salud
-                  </CardTitle>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-600">
-                      {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-                  {countries.map((country, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      {getVoteIcon(country.vote)}
-                      <span className="text-sm">{country.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="flex flex-col items-center justify-center p-8">
-                  <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                    <Check className="w-12 h-12 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">A favor</h3>
-                  <p className="text-3xl font-bold text-green-600">:{results.inFavor}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-red-50 border-red-200">
-                <CardContent className="flex flex-col items-center justify-center p-8">
-                  <div className="w-24 h-24 bg-red-500 rounded-full flex items-center justify-center mb-4">
-                    <X className="w-12 h-12 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">En contra</h3>
-                  <p className="text-3xl font-bold text-red-600">:{results.against}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-yellow-50 border-yellow-200">
-                <CardContent className="flex flex-col items-center justify-center p-8">
-                  <div className="w-24 h-24 bg-yellow-500 rounded-full flex items-center justify-center mb-4">
-                    <Minus className="w-12 h-12 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Se abstienen</h3>
-                  <p className="text-3xl font-bold text-yellow-600">:{results.abstention}</p>
-                </CardContent>
-              </Card>
+              </h1>
+              <p className="text-xl text-gray-600 font-medium">
+                Se realiza la votación según la resolución 505/21 del MINSAP
+              </p>
             </div>
-          </div>
-        )}
+
+            {!hasVoted ? (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                  {/* Opción SÍ */}
+                  <div
+                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-300 ${
+                      selectedVote === "yes" ? "scale-110 drop-shadow-2xl" : "hover:scale-105 hover:drop-shadow-lg"
+                    }`}
+                    onClick={() => handleVote("yes")}
+                  >
+                    <div
+                      className={`w-48 h-48 rounded-full flex items-center justify-center mb-6 shadow-2xl transition-all duration-300 ${
+                        selectedVote === "yes"
+                          ? "bg-gradient-to-br from-green-300 to-green-400 border-8 border-green-600 ring-4 ring-green-200"
+                          : "bg-gradient-to-br from-green-200 to-green-300 border-6 border-green-500"
+                      }`}
+                    >
+                      <svg
+                        className="w-28 h-28 text-green-800"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M20 6L9 17L4 12"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-800">Sí</h3>
+                  </div>
+
+                  {/* Opción NO */}
+                  <div
+                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-300 ${
+                      selectedVote === "no" ? "scale-110 drop-shadow-2xl" : "hover:scale-105 hover:drop-shadow-lg"
+                    }`}
+                    onClick={() => handleVote("no")}
+                  >
+                    <div
+                      className={`w-48 h-48 rounded-full flex items-center justify-center mb-6 shadow-2xl transition-all duration-300 ${
+                        selectedVote === "no"
+                          ? "bg-gradient-to-br from-red-300 to-red-400 border-8 border-red-600 ring-4 ring-red-200"
+                          : "bg-gradient-to-br from-red-200 to-red-300 border-6 border-red-500"
+                      }`}
+                    >
+                      <svg
+                        className="w-28 h-28 text-red-800"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M18 6L6 18"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M6 6L18 18"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-800">No</h3>
+                  </div>
+
+                  {/* Opción ABSTENCIÓN */}
+                  <div
+                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-300 ${
+                      selectedVote === "abstention"
+                        ? "scale-110 drop-shadow-2xl"
+                        : "hover:scale-105 hover:drop-shadow-lg"
+                    }`}
+                    onClick={() => handleVote("abstention")}
+                  >
+                    <div
+                      className={`w-48 h-48 rounded-full flex items-center justify-center mb-6 shadow-2xl transition-all duration-300 ${
+                        selectedVote === "abstention"
+                          ? "bg-gradient-to-br from-yellow-300 to-yellow-400 border-8 border-yellow-600 ring-4 ring-yellow-200"
+                          : "bg-gradient-to-br from-yellow-200 to-yellow-300 border-6 border-yellow-500"
+                      }`}
+                    >
+                      <svg
+                        className="w-28 h-28 text-yellow-800"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
+                        <path
+                          d="M4.93 4.93L19.07 19.07"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-3xl font-bold text-gray-800">Abstención</h3>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <Button
+                    onClick={submitVote}
+                    disabled={!selectedVote}
+                    className={`px-16 py-6 text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 ${
+                      selectedVote
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transform hover:scale-105"
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Votar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                  <svg
+                    className="w-20 h-20 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M20 6L9 17L4 12"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-4xl font-bold text-green-600 mb-6">¡Voto registrado correctamente!</h2>
+                <p className="text-xl text-gray-600 mb-8">Su voto ha sido registrado en el sistema.</p>
+                <Link href="/voting">
+                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg">
+                    Volver a votaciones
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
