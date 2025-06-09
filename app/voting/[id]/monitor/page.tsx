@@ -5,35 +5,23 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { getAuxVoting, getIdentity, getSocket, getToken } from "@/lib/utils";
+import { IVoting } from "@/interfaces/IVoting";
 
-export default function VotingMonitorPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function VotingMonitorPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-
-  // Mock voting data
-  const votingData = {
-    id: params.id,
-    title: "Votación sobre el uso correcto de los equipos médicos en la salud",
-    date: "2025-05-09",
-    time: "10:00:00 am",
-    countries: [
-      { name: "Cuba", vote: "favor" },
-      { name: "Noruega", vote: "contra" },
-      { name: "Alemania", vote: "abstencion" },
-      { name: "Brazil", vote: "abstencion" },
-      { name: "México", vote: "favor" },
-      { name: "Ecuador", vote: "contra" },
-    ],
-    results: {
-      favor: 14,
-      contra: 14,
-      abstencion: 14,
-    },
-  };
+  const [votingData, setVotingData] = useState<IVoting>(getAuxVoting());
+  const [monitorData, setMonitorData] = useState<{
+    votes: {
+      country: string;
+      vote: number;
+    }[];
+    in_favour: number;
+    against: number;
+    abstention: number;
+  }>();
+  const [socket, setSocket] = useState<any>();
 
   useEffect(() => {
     // Simulate loading data
@@ -43,9 +31,26 @@ export default function VotingMonitorPage({
     return () => clearTimeout(timer);
   }, []);
 
-  const getVoteIcon = (vote: string) => {
+  useEffect(() => {
+    socket?.emit(
+      "show-monitor",
+      {
+        identity: getIdentity(),
+        token: getToken(),
+        id: votingData.id_voting,
+      },
+      (res: any) => {}
+    );
+  }, [socket]);
+
+  useEffect(() => {
+    const newSocket = getSocket(setMonitorData);
+    setSocket(newSocket);
+  }, [monitorData]);
+
+  const getVoteIcon = (vote: number) => {
     switch (vote) {
-      case "favor":
+      case 1:
         return (
           <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white">
             <svg
@@ -64,7 +69,7 @@ export default function VotingMonitorPage({
             </svg>
           </div>
         );
-      case "contra":
+      case 0:
         return (
           <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500 text-white">
             <svg
@@ -83,7 +88,7 @@ export default function VotingMonitorPage({
             </svg>
           </div>
         );
-      case "abstencion":
+      case 2:
         return (
           <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500 text-white">
             <svg
@@ -116,28 +121,44 @@ export default function VotingMonitorPage({
 
   // Create a grid of countries with their votes
   const renderCountryGrid = () => {
-    // Duplicate countries to match the image (7 columns)
-    const duplicatedCountries = [];
-    for (let i = 0; i < 7; i++) {
-      votingData.countries.forEach((country) => {
-        duplicatedCountries.push(country);
-      });
+    const countries = monitorData?.votes || [];
+    const columns = 7;
+    const maxItemsPerColumn = 2;
+
+    // 1. Dividir los países en columnas (máximo 28 elementos por columna)
+    const columnData: (typeof countries)[] = [];
+
+    for (let i = 0; i < columns; i++) {
+      const start = i * maxItemsPerColumn;
+      const end = start + maxItemsPerColumn;
+      columnData.push(countries.slice(start, end));
     }
+
+    // 2. Calcular el máximo de filas necesario (la columna con más elementos)
+    const maxRows = Math.max(...columnData.map((col) => col.length), 0);
 
     return (
       <div className="w-full overflow-x-auto">
         <table className="w-full border-collapse">
           <tbody>
-            {votingData.countries.map((country, index) => (
-              <tr key={index} className="border-t">
-                {Array.from({ length: 7 }).map((_, colIndex) => (
-                  <td key={colIndex} className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getVoteIcon(country.vote)}
-                      <span>{country.name}</span>
-                    </div>
-                  </td>
-                ))}
+            {Array.from({ length: maxRows }).map((_, rowIndex) => (
+              <tr key={rowIndex} className="border-t">
+                {columnData.map((column, colIndex) => {
+                  const country = column[rowIndex];
+                  if (!country) return null; // No renderizar celdas vacías
+
+                  return (
+                    <td
+                      key={`${colIndex}-${rowIndex}`}
+                      className="px-4 py-3 whitespace-nowrap"
+                    >
+                      <div className="flex items-center space-x-2">
+                        {getVoteIcon(country.vote)}
+                        <span>{country.country}</span>
+                      </div>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -179,9 +200,10 @@ export default function VotingMonitorPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
-            <h1 className="text-xl font-bold">{votingData.title}</h1>
+            <h1 className="text-xl font-bold">{votingData.voting_name}</h1>
             <div className="text-right text-gray-600">
-              {votingData.date} {votingData.time}
+              {votingData.date?.toString()}{" "}
+              {votingData.hour ? ` • ${votingData.hour}` : ``}
             </div>
           </div>
 
@@ -207,9 +229,9 @@ export default function VotingMonitorPage({
               </div>
               <div className="mt-2 text-center">
                 <div className="text-xl font-bold">
-                  :{votingData.results.favor}
+                  {monitorData?.in_favour || 0}{" "}
+                  <span className="text-lg font-medium">A favor</span>
                 </div>
-                <div className="text-lg font-medium">A favor</div>
               </div>
             </div>
 
@@ -232,9 +254,9 @@ export default function VotingMonitorPage({
               </div>
               <div className="mt-2 text-center">
                 <div className="text-xl font-bold">
-                  :{votingData.results.contra}
+                  {monitorData?.against || 0}{" "}
+                  <span className="text-lg font-medium">En contra</span>
                 </div>
-                <div className="text-lg font-medium">En contra</div>
               </div>
             </div>
 
@@ -253,9 +275,9 @@ export default function VotingMonitorPage({
               </div>
               <div className="mt-2 text-center">
                 <div className="text-xl font-bold">
-                  :{votingData.results.abstencion}
+                  {monitorData?.abstention || 0}{" "}
+                  <span className="text-lg font-medium">En contra</span>
                 </div>
-                <div className="text-lg font-medium">Se abstienen</div>
               </div>
             </div>
           </div>

@@ -497,6 +497,9 @@ export default function VotingPage() {
                                 variant="outline"
                                 size="sm"
                                 className="border-gray-300 hover:bg-gray-50"
+                                onClick={() => {
+                                  prepareAuxVoting(voting);
+                                }}
                               >
                                 <MonitorCheck className="w-4 h-4" />
                               </Button>

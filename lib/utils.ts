@@ -4,6 +4,8 @@ import { io, Socket } from "socket.io-client";
 import { IUser } from "@/interfaces/IUser";
 import { IFormData } from "@/interfaces/IFormData";
 import { IVoting } from "@/interfaces/IVoting";
+import { isFunction } from "util";
+import { Dispatch } from "react";
 
 declare global {
   interface Window {
@@ -137,9 +139,15 @@ export const getAuxRoles = (): IExtandar[] => __roles;
 export const getAuxCountries = (): IExtandar[] => __countries;
 export const getAuxVoting = (): IVoting => __voting;
 
-// Socket initialization remains the same
-export const getSocket = () => {
+// Cambiamos a un array de listeners para soportar múltiples componentes
+const monitorDataListeners: ((data: any) => void)[] = [];
+
+export const getSocket = (setMonitorData?: Dispatch<any>) => {
   if (typeof window !== "undefined" && window.__socket) {
+    // Si se proporciona un nuevo listener, lo añadimos
+    if (setMonitorData && typeof setMonitorData === "function") {
+      monitorDataListeners.push(setMonitorData);
+    }
     return window.__socket;
   }
 
@@ -156,6 +164,22 @@ export const getSocket = () => {
         sessionStorage.setItem("identity", identity);
       }
     });
+
+    // Configuramos el listener una sola vez
+    newSocket.on("executed-votes", (res: any) => {
+      // Notificamos a todos los listeners registrados
+
+      monitorDataListeners.forEach((listener) => {
+        if (typeof listener === "function") {
+          listener(res);
+        }
+      });
+    });
+
+    // Añadimos el listener inicial si existe
+    if (setMonitorData && typeof setMonitorData === "function") {
+      monitorDataListeners.push(setMonitorData);
+    }
 
     window.__socket = newSocket;
     return newSocket;
