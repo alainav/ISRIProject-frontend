@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import { io, Socket } from "socket.io-client";
 import { IUser } from "@/interfaces/IUser";
 import { IFormData } from "@/interfaces/IFormData";
+import { IVoting } from "@/interfaces/IVoting";
 
 declare global {
   interface Window {
@@ -40,6 +41,20 @@ let __user: IUser = {
   code_access: "",
   date_expired: "",
   date_register: "",
+};
+
+let __voting: IVoting = {
+  id_voting: 0,
+  voting_name: "",
+  description: "",
+  result: "",
+  commission_name: "",
+  in_favour: 0,
+  against: 0,
+  abstention: 0,
+  totalVotes: 0,
+  state: "",
+  totalParticipants: 0,
 };
 
 let __formData: IFormData = {
@@ -110,10 +125,17 @@ export const prepareAuxCountry = (country: IExtandar[]) => {
   return __countries;
 };
 
+// Function to update voting
+export const prepareAuxVoting = (voting: IVoting) => {
+  __voting = voting;
+  return __voting;
+};
+
 // Function to get current user
 export const getAuxUser = (): IUser => __user;
 export const getAuxRoles = (): IExtandar[] => __roles;
 export const getAuxCountries = (): IExtandar[] => __countries;
+export const getAuxVoting = (): IVoting => __voting;
 
 // Socket initialization remains the same
 export const getSocket = () => {

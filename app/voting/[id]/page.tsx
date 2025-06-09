@@ -1,214 +1,242 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import Link from "next/link"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, LineChart } from "lucide-react";
+import Link from "next/link";
+import { getAuxVoting, getIdentity, getToken, socket } from "@/lib/utils";
+import { IVoting } from "@/interfaces/IVoting";
 
-export default function VotingPage({ params }: { params: { id: string } }) {
-  const [selectedVote, setSelectedVote] = useState<string | null>(null)
-  const [hasVoted, setHasVoted] = useState(false)
+export default function VotingPage() {
+  const router = useRouter();
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [votingData, setVotingData] = useState<IVoting>(getAuxVoting());
+  const [message, setMessage] = useState<string>(
+    "Su voto ha sido registrado correctamente."
+  );
 
-  const handleVote = (voteType: string) => {
-    setSelectedVote(voteType)
-  }
+  const handleVote = (option: number) => {
+    if (!hasVoted) {
+      setSelectedOption(option);
+    }
+  };
 
   const submitVote = () => {
-    if (selectedVote) {
-      setHasVoted(true)
-      // Here you would typically send the vote to your backend
+    if (selectedOption) {
+      setIsLoading(true);
+
+      socket.emit(
+        "execute-vote",
+        {
+          token: getToken(),
+          identity: getIdentity(),
+          id: votingData.id_voting,
+          vote: selectedOption,
+        },
+        (res: any) => {
+          setMessage(res.message);
+          setIsLoading(false);
+          setHasVoted(true);
+          if (res.success) {
+          }
+        }
+      );
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #87CEEB 0%, #B0E0E6 100%)" }}>
-      {/* Simple Header with Back Button */}
-      <header className="p-6">
-        <div className="max-w-6xl mx-auto">
-          <Link href="/voting">
-            <Button variant="outline" className="bg-white/90 hover:bg-white shadow-md border-0 font-medium">
-              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path
-                  d="M12 19L5 12L12 5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Volver
-            </Button>
-          </Link>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      {/* Simplified Header */}
+      <header className="bg-transparent py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <Link href="/voting">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-gray-300 hover:bg-gray-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver
+              </Button>
+            </Link>
+            <Link href={`/voting/${votingData.id_voting}/monitor`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-gray-300 hover:bg-gray-50"
+              >
+                <LineChart className="w-4 h-4 mr-2" />
+                Ver Monitor
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
-          <CardContent className="p-12">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">
-                Votación sobre el uso correcto de los equipos médicos en la salud
-              </h1>
-              <p className="text-xl text-gray-600 font-medium">
-                Se realiza la votación según la resolución 505/21 del MINSAP
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="p-6 border-b">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {votingData.voting_name}
+            </h1>
+            <div className="flex flex-col sm:flex-row sm:justify-between mt-2">
+              <p className="text-gray-600">{votingData.commission_name}</p>
+              <p className="text-gray-600">
+                {votingData.date?.toString()}{" "}
+                {votingData.hour ? ` • ${votingData.hour}` : ``}
               </p>
             </div>
+          </div>
 
-            {!hasVoted ? (
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
-                  {/* Opción SÍ */}
-                  <div
-                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-300 ${
-                      selectedVote === "yes" ? "scale-110 drop-shadow-2xl" : "hover:scale-105 hover:drop-shadow-lg"
-                    }`}
-                    onClick={() => handleVote("yes")}
-                  >
-                    <div
-                      className={`w-48 h-48 rounded-full flex items-center justify-center mb-6 shadow-2xl transition-all duration-300 ${
-                        selectedVote === "yes"
-                          ? "bg-gradient-to-br from-green-300 to-green-400 border-8 border-green-600 ring-4 ring-green-200"
-                          : "bg-gradient-to-br from-green-200 to-green-300 border-6 border-green-500"
-                      }`}
-                    >
-                      <svg
-                        className="w-28 h-28 text-green-800"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M20 6L9 17L4 12"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-800">Sí</h3>
-                  </div>
+          <div className="p-6">
+            <p className="text-gray-700 mb-8">{votingData.description}</p>
 
-                  {/* Opción NO */}
-                  <div
-                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-300 ${
-                      selectedVote === "no" ? "scale-110 drop-shadow-2xl" : "hover:scale-105 hover:drop-shadow-lg"
-                    }`}
-                    onClick={() => handleVote("no")}
-                  >
-                    <div
-                      className={`w-48 h-48 rounded-full flex items-center justify-center mb-6 shadow-2xl transition-all duration-300 ${
-                        selectedVote === "no"
-                          ? "bg-gradient-to-br from-red-300 to-red-400 border-8 border-red-600 ring-4 ring-red-200"
-                          : "bg-gradient-to-br from-red-200 to-red-300 border-6 border-red-500"
-                      }`}
-                    >
-                      <svg
-                        className="w-28 h-28 text-red-800"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M18 6L6 18"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M6 6L18 18"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-800">No</h3>
-                  </div>
+            <div className="text-center mb-4">
+              <h2 className="text-xl font-semibold mb-6">
+                {hasVoted ? "¡Gracias por su voto!" : "Seleccione su voto:"}
+              </h2>
+            </div>
 
-                  {/* Opción ABSTENCIÓN */}
-                  <div
-                    className={`flex flex-col items-center cursor-pointer transform transition-all duration-300 ${
-                      selectedVote === "abstention"
-                        ? "scale-110 drop-shadow-2xl"
-                        : "hover:scale-105 hover:drop-shadow-lg"
-                    }`}
-                    onClick={() => handleVote("abstention")}
-                  >
-                    <div
-                      className={`w-48 h-48 rounded-full flex items-center justify-center mb-6 shadow-2xl transition-all duration-300 ${
-                        selectedVote === "abstention"
-                          ? "bg-gradient-to-br from-yellow-300 to-yellow-400 border-8 border-yellow-600 ring-4 ring-yellow-200"
-                          : "bg-gradient-to-br from-yellow-200 to-yellow-300 border-6 border-yellow-500"
-                      }`}
-                    >
-                      <svg
-                        className="w-28 h-28 text-yellow-800"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
-                        <path
-                          d="M4.93 4.93L19.07 19.07"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-3xl font-bold text-gray-800">Abstención</h3>
-                  </div>
-                </div>
-
-                <div className="flex justify-center">
-                  <Button
-                    onClick={submitVote}
-                    disabled={!selectedVote}
-                    className={`px-16 py-6 text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 ${
-                      selectedVote
-                        ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 transform hover:scale-105"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
-                  >
-                    Votar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-8 mb-10">
+              <div
+                className={`relative w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                  selectedOption === 1
+                    ? "bg-green-100 border-4 border-green-500 shadow-lg transform scale-110"
+                    : "bg-green-50 border border-green-200 hover:bg-green-100"
+                } ${hasVoted && selectedOption === 1 ? "animate-pulse" : ""}`}
+                onClick={() => handleVote(1)}
+              >
+                <div
+                  className={`text-green-600 flex flex-col items-center justify-center transition-opacity ${
+                    hasVoted && selectedOption !== 1
+                      ? "opacity-50"
+                      : "opacity-100"
+                  }`}
+                >
                   <svg
-                    className="w-20 h-20 text-white"
-                    viewBox="0 0 24 24"
-                    fill="none"
                     xmlns="http://www.w3.org/2000/svg"
+                    className="h-16 w-16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
-                      d="M20 6L9 17L4 12"
-                      stroke="currentColor"
-                      strokeWidth="3"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
                     />
                   </svg>
+                  <span className="font-bold mt-2">A favor</span>
                 </div>
-                <h2 className="text-4xl font-bold text-green-600 mb-6">¡Voto registrado correctamente!</h2>
-                <p className="text-xl text-gray-600 mb-8">Su voto ha sido registrado en el sistema.</p>
-                <Link href="/voting">
-                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg">
-                    Volver a votaciones
-                  </Button>
-                </Link>
               </div>
-            )}
-          </CardContent>
-        </Card>
+
+              <div
+                className={`relative w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                  selectedOption === 0
+                    ? "bg-red-100 border-4 border-red-500 shadow-lg transform scale-110"
+                    : "bg-red-50 border border-red-200 hover:bg-red-100"
+                } ${hasVoted && selectedOption === 0 ? "animate-pulse" : ""}`}
+                onClick={() => handleVote(0)}
+              >
+                <div
+                  className={`text-red-600 flex flex-col items-center justify-center transition-opacity ${
+                    hasVoted && selectedOption !== 0
+                      ? "opacity-50"
+                      : "opacity-100"
+                  }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-16 w-16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  <span className="font-bold mt-2">En contra</span>
+                </div>
+              </div>
+
+              <div
+                className={`relative w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+                  selectedOption === 2
+                    ? "bg-yellow-100 border-4 border-yellow-500 shadow-lg transform scale-110"
+                    : "bg-yellow-50 border border-yellow-200 hover:bg-yellow-100"
+                } ${hasVoted && selectedOption === 2 ? "animate-pulse" : ""}`}
+                onClick={() => handleVote(2)}
+              >
+                <div
+                  className={`text-yellow-600 flex flex-col items-center justify-center transition-opacity ${
+                    hasVoted && selectedOption !== 2
+                      ? "opacity-50"
+                      : "opacity-100"
+                  }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-16 w-16"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                    <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2" />
+                  </svg>
+                  <span className="font-bold mt-2">Abstención</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              {!hasVoted ? (
+                <Button
+                  onClick={submitVote}
+                  disabled={!selectedOption || isLoading}
+                  className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors"
+                >
+                  {isLoading ? "Procesando..." : "Votar"}
+                </Button>
+              ) : (
+                <div className="text-center">
+                  <p
+                    className={`${
+                      selectedOption === 1
+                        ? `text-green-600`
+                        : selectedOption === 0
+                        ? `text-red-600`
+                        : `text-yellow-600`
+                    } font-medium mb-4`}
+                  >
+                    {message}
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <Link href="/voting">
+                      <Button variant="outline">Volver a la lista</Button>
+                    </Link>
+                    <Link href={`/voting/${votingData.id_voting}/monitor`}>
+                      <Button>
+                        <LineChart className="w-4 h-4 mr-2" />
+                        Ver resultados
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );
 }

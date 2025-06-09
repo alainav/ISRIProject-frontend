@@ -30,10 +30,54 @@ import {
   Building,
   Settings,
   LogOut,
+  LineChart,
+  Edit,
+  Trash2,
+  GalleryThumbnails,
+  Power,
+  PowerOff,
+  MonitorCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { getIsAuthenticated, getStorageUsername } from "@/lib/utils";
+import {
+  getIdentity,
+  getIsAuthenticated,
+  getStorageUsername,
+  getToken,
+  prepareAuxVoting,
+  socket,
+} from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { Dialog } from "@radix-ui/react-dialog";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { IVoting } from "@/interfaces/IVoting";
+
+// 2. Función para cargar diputados (separa la lógica)
+const loadVoting = (setMockVoting: Function, currentPage: number) => {
+  socket.emit(
+    "list-voting",
+    {
+      token: getToken(),
+      identity: getIdentity(),
+      page: currentPage,
+    },
+    (response: any) => {
+      if (response.success) {
+        setMockVoting(response.votings);
+      } else {
+        console.error(response.message);
+      }
+    }
+  );
+};
 
 export default function VotingPage() {
   const router = useRouter();
@@ -41,83 +85,108 @@ export default function VotingPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingVoting, setEditingVoting] = useState<any>(null);
+  const [deletingVoting, setDeletingVoting] = useState<any>(null);
+  const [mockVoting, setMockVoting] = useState<IVoting[]>([]);
+  const [filteredVoting, setFilteredVoting] = useState<IVoting[]>([]);
+  const [activeCount, setActiveCount] = useState<number>(0);
+  const [completedCount, setCompletedCount] = useState<number>(0);
+  const [scheduledCount, setScheduledCount] = useState<number>(0);
 
   useEffect(() => {
     setIsAuthenticated(getIsAuthenticated());
     setStorageUserName(getStorageUsername());
-  }, [router, currentPage]);
 
-  // Mock data for voting sessions
-  const votingSessions = [
-    {
-      id: "1",
-      title:
-        "Votación sobre el uso correcto de los equipos médicos en la salud",
-      date: "2025-06-05",
-      status: "active",
-      participants: 42,
-      votes: 28,
-      resolution: "505/21 del MINSAP",
-    },
-    {
-      id: "2",
-      title: "Votación para la aprobación del presupuesto anual",
-      date: "2025-05-20",
-      status: "completed",
-      participants: 50,
-      votes: 48,
-      resolution: "302/25 del MINFIN",
-    },
-    {
-      id: "3",
-      title: "Votación para la elección de representantes regionales",
-      date: "2025-06-12",
-      status: "scheduled",
-      participants: 60,
-      votes: 0,
-      resolution: "128/25 del MINREX",
-    },
-    {
-      id: "4",
-      title: "Votación sobre la reforma educativa",
-      date: "2025-04-15",
-      status: "completed",
-      participants: 45,
-      votes: 42,
-      resolution: "210/25 del MINED",
-    },
-    {
-      id: "5",
-      title: "Votación para la aprobación de nuevos protocolos sanitarios",
-      date: "2025-06-20",
-      status: "scheduled",
-      participants: 38,
-      votes: 0,
-      resolution: "612/25 del MINSAP",
-    },
-  ];
+    //loadVoting(setMockVoting, currentPage);
+    setCurrentPage(1);
+  }, [router]);
+
+  useEffect(() => {
+    loadVoting(setMockVoting, currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    const filtered = prepareFilterVoting();
+    setFilteredVoting(filtered);
+
+    // Get counts for stats
+    const activeCount = mockVoting.filter((s) => s.result === "Activa").length;
+    const completedCount = mockVoting.filter(
+      (s) =>
+        s.result === "Aprobada" ||
+        s.result === "Denegada" ||
+        s.result === "Sin Desición"
+    ).length;
+    const scheduledCount = mockVoting.filter(
+      (s) => s.result === "Programada"
+    ).length;
+
+    setActiveCount(activeCount);
+    setCompletedCount(completedCount);
+    setScheduledCount(scheduledCount);
+  }, [mockVoting, searchTerm, statusFilter]);
+
+  const handleCreateVoting = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleEditVoting = (voting: IVoting) => {
+    setEditingVoting(voting);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteVoting = (voting: IVoting) => {
+    setDeletingVoting(voting);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleSaveVoting = () => {
+    // Aquí iría la lógica para guardar la votación
+    setIsCreateDialogOpen(false);
+    setIsEditDialogOpen(false);
+    setEditingVoting(null);
+  };
+
+  const handleConfirmDelete = () => {
+    // Aquí iría la lógica para eliminar la votación
+    setIsDeleteDialogOpen(false);
+    setDeletingVoting(null);
+  };
+
+  const handleSwitchVoting = (id: number) => {
+    //Logica para Abrir o Cerrar una votación
+    socket.emit(
+      "change-status-voting",
+      { identity: getIdentity(), token: getToken(), id },
+      (res: any) => {
+        if (res.success) {
+          loadVoting(setMockVoting, currentPage);
+        } else {
+          console.error(res.message);
+        }
+      }
+    );
+  };
 
   // Filter voting sessions based on search term and status
-  const filteredSessions = votingSessions.filter((session) => {
-    const matchesSearch =
-      session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      session.resolution.toLowerCase().includes(searchTerm.toLowerCase());
 
-    if (statusFilter === "all") return matchesSearch;
-    return matchesSearch && session.status === statusFilter;
-  });
+  const prepareFilterVoting = () => {
+    return mockVoting?.filter((voting) => {
+      const matchesSearch =
+        voting.voting_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        voting.commission_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        voting.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-  // Get counts for stats
-  const activeCount = votingSessions.filter(
-    (s) => s.status === "active"
-  ).length;
-  const completedCount = votingSessions.filter(
-    (s) => s.status === "completed"
-  ).length;
-  const scheduledCount = votingSessions.filter(
-    (s) => s.status === "scheduled"
-  ).length;
+      if (statusFilter === "all") return matchesSearch;
+      return matchesSearch && voting.state === statusFilter;
+    });
+  };
 
   const navigationTabs = [
     { id: "users", label: "Gestionar Usuario", icon: Users, href: "/users" },
@@ -152,26 +221,20 @@ export default function VotingPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "active":
-        return (
-          <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-            Activa
-          </span>
-        );
-      case "completed":
-        return (
-          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
-            Completada
-          </span>
-        );
-      case "scheduled":
-        return (
-          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-            Programada
-          </span>
-        );
+      case "Activa":
+        return " bg-green-100 text-green-800";
+      case "Aprobada":
+      case "Denegada":
+      case "Sin Desición":
+        return "bg-gray-100 text-gray-800";
+      case "Programada":
+        return "bg-blue-100 text-blue-800";
+      case "Abierta":
+        return "bg-green-100 text-green-800";
+      case "Cerrada":
+        return "bg-red-100 text-red-800";
       default:
-        return null;
+        return "";
     }
   };
 
@@ -237,8 +300,11 @@ export default function VotingPage() {
               Administre las sesiones de votación del sistema
             </p>
           </div>
-          <Button className="mt-4 md:mt-0">
-            <Plus className="mr-2 h-4 w-4" />
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={handleCreateVoting}
+          >
+            <Plus className="w-4 h-4 mr-2" />
             Nueva Votación
           </Button>
         </div>
@@ -302,13 +368,15 @@ export default function VotingPage() {
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full md:w-[180px]">
-                  <SelectValue placeholder="Filtrar por estado" />
+                  <SelectValue placeholder="Filtrar por resultado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="active">Activas</SelectItem>
-                  <SelectItem value="completed">Completadas</SelectItem>
-                  <SelectItem value="scheduled">Programadas</SelectItem>
+                  <SelectItem value="all">Todos los resultados</SelectItem>
+                  <SelectItem value="Activa">Activas</SelectItem>
+                  <SelectItem value="Aprobada">Aprobadas</SelectItem>
+                  <SelectItem value="Denegada">Denegadas</SelectItem>
+                  <SelectItem value="Sin Desición">Sin Desición</SelectItem>
+                  <SelectItem value="Programada">Programadas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -317,26 +385,26 @@ export default function VotingPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[400px]">
+                    <TableHead className="w-[350px]">
                       <div className="flex items-center">
                         Título
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </div>
                     </TableHead>
-                    <TableHead>Resolución</TableHead>
-                    <TableHead>Fecha</TableHead>
+                    <TableHead>Comisión</TableHead>
                     <TableHead>Estado</TableHead>
+                    <TableHead>Resutado</TableHead>
                     <TableHead>
                       <div className="flex items-center">
                         Participantes
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </div>
                     </TableHead>
-                    <TableHead>Acciones</TableHead>
+                    <TableHead className="text-center">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSessions.length === 0 ? (
+                  {!filteredVoting || filteredVoting.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={6}
@@ -346,34 +414,108 @@ export default function VotingPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredSessions.map((session) => (
-                      <TableRow key={session.id}>
+                    filteredVoting.map((voting) => (
+                      <TableRow key={voting.id_voting}>
                         <TableCell className="font-medium">
-                          {session.title}
+                          {voting.voting_name}
                         </TableCell>
-                        <TableCell>{session.resolution}</TableCell>
+                        <TableCell>{voting.commission_name}</TableCell>
                         <TableCell>
-                          {new Date(session.date).toLocaleDateString()}
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(
+                              voting.state
+                            )}`}
+                          >
+                            {voting.state}
+                          </span>
                         </TableCell>
-                        <TableCell>{getStatusBadge(session.status)}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(
+                              voting.result
+                            )}`}
+                          >
+                            {voting.result}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-2 text-gray-500" />
-                            <span>{session.participants}</span>
-                            {session.votes > 0 && (
+                            <span>{voting.totalParticipants}</span>
+                            {voting.totalVotes > 0 && (
                               <span className="ml-2 text-xs text-gray-500">
-                                ({session.votes} votos)
+                                ({voting.totalVotes} votos)
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Link href={`/voting/${session.id}`}>
-                              <Button variant="outline" size="sm">
-                                {session.status === "active" ? "Votar" : "Ver"}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={
+                                voting.result === "Aprobada" ||
+                                voting.result === "Denegada" ||
+                                voting.result === "Sin Desición"
+                                  ? "hidden"
+                                  : ""
+                              }
+                              onClick={() =>
+                                handleSwitchVoting(voting.id_voting)
+                              }
+                            >
+                              {voting.state === "Abierta" ? (
+                                <PowerOff className="h-4 w-4" />
+                              ) : (
+                                <Power className="h-4 w-4" />
+                              )}
+                            </Button>
+
+                            <Link
+                              href={`${
+                                voting.state === "Abierta"
+                                  ? `/voting/${voting.id_voting}`
+                                  : `/voting/${voting.id_voting}/monitor`
+                              }`}
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={
+                                  voting.state === "Cerrada" ? "hidden" : ""
+                                }
+                                onClick={() => {
+                                  prepareAuxVoting(voting);
+                                }}
+                              >
+                                <Vote className="h-4 w-4" />
                               </Button>
                             </Link>
+                            <Link href={`/voting/${voting.id_voting}/monitor`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-gray-300 hover:bg-gray-50"
+                              >
+                                <MonitorCheck className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditVoting(voting)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteVoting(voting)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -383,6 +525,134 @@ export default function VotingPage() {
               </Table>
             </div>
           </CardContent>
+
+          {/* Modal Crear/Editar Votación */}
+          <Dialog
+            open={isCreateDialogOpen || isEditDialogOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsCreateDialogOpen(false);
+                setIsEditDialogOpen(false);
+                setEditingVoting(null);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingVoting ? "Editar Votación" : "Crear Nueva Votación"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingVoting
+                    ? "Modifique los datos de la votación."
+                    : "Complete los datos para crear una nueva votación."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="title" className="text-right">
+                    Título
+                  </Label>
+                  <Input
+                    id="title"
+                    defaultValue={editingVoting?.title || ""}
+                    className="col-span-3"
+                    placeholder="Título de la votación"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="description" className="text-right pt-2">
+                    Descripción
+                  </Label>
+                  <Textarea
+                    id="description"
+                    defaultValue={editingVoting?.description || ""}
+                    className="col-span-3"
+                    placeholder="Descripción detallada..."
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="commission" className="text-right">
+                    Comisión
+                  </Label>
+                  <Select defaultValue={editingVoting?.commission || ""}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Seleccionar comisión" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salud">Comisión de Salud</SelectItem>
+                      <SelectItem value="educacion">
+                        Comisión de Educación
+                      </SelectItem>
+                      <SelectItem value="economia">
+                        Comisión de Economía
+                      </SelectItem>
+                      <SelectItem value="cultura">
+                        Comisión de Cultura
+                      </SelectItem>
+                      <SelectItem value="ciencia">
+                        Comisión de Ciencia y Tecnología
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="deadline" className="text-right">
+                    Fecha Límite
+                  </Label>
+                  <Input
+                    id="deadline"
+                    type="datetime-local"
+                    defaultValue={editingVoting?.deadline || ""}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateDialogOpen(false);
+                    setIsEditDialogOpen(false);
+                    setEditingVoting(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveVoting}>
+                  {editingVoting ? "Guardar Cambios" : "Crear Votación"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal Eliminar Votación */}
+          <Dialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+          >
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Eliminar Votación</DialogTitle>
+                <DialogDescription>
+                  ¿Está seguro que desea eliminar la votación "
+                  {deletingVoting?.title}"? Esta acción no se puede deshacer y
+                  se perderán todos los votos registrados.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleConfirmDelete}>
+                  Eliminar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </Card>
       </div>
     </div>
