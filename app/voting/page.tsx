@@ -44,6 +44,7 @@ import {
   getIsAuthenticated,
   getStorageUsername,
   getToken,
+  prepareAuxCommission,
   prepareAuxVoting,
   socket,
 } from "@/lib/utils";
@@ -59,6 +60,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { IVoting } from "@/interfaces/IVoting";
+import { ICommission } from "@/interfaces/ICommission";
+import { IFormData } from "@/interfaces/IFormData";
+import { IFormVotingData } from "@/interfaces/IFormVotingData";
 
 // 2. Función para cargar diputados (separa la lógica)
 const loadVoting = (setMockVoting: Function, currentPage: number) => {
@@ -96,6 +100,8 @@ export default function VotingPage() {
   const [activeCount, setActiveCount] = useState<number>(0);
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [scheduledCount, setScheduledCount] = useState<number>(0);
+  const [commissions, setCommissions] = useState<ICommission[]>([]);
+  const [message, setMessage] = useState<string>();
 
   useEffect(() => {
     setIsAuthenticated(getIsAuthenticated());
@@ -103,6 +109,28 @@ export default function VotingPage() {
 
     //loadVoting(setMockVoting, currentPage);
     setCurrentPage(1);
+
+    // 3. Función para cargar los roles (separa la lógica)
+    const loadCommissions = () => {
+      socket.emit(
+        "list-commissions",
+        {
+          token: getToken(),
+          identity: getIdentity(),
+          page: currentPage,
+        },
+        (response: any) => {
+          if (response.success) {
+            setCommissions(response.commissions);
+            prepareAuxCommission(response.commissions);
+          } else {
+            console.error(response.message);
+          }
+        }
+      );
+    };
+
+    loadCommissions();
   }, [router]);
 
   useEffect(() => {
@@ -130,6 +158,27 @@ export default function VotingPage() {
     setScheduledCount(scheduledCount);
   }, [mockVoting, searchTerm, statusFilter]);
 
+  const handleInputChange = (
+    field: keyof IFormVotingData,
+    value: string | number
+  ) => {
+    const updatedVoting: any = { ...editingVoting };
+
+    if (field === "commission") {
+      const findCommission = commissions.find((c) => c.name === value);
+      value = findCommission?.id_commission || 0;
+    }
+
+    if (field === "voting_description") {
+      updatedVoting["description"] = value;
+    }
+
+    updatedVoting[field] = value;
+
+    // Actualizar ambos: estado local y usuario auxiliar
+    setEditingVoting(updatedVoting);
+  };
+
   const handleCreateVoting = () => {
     setIsCreateDialogOpen(true);
   };
@@ -145,10 +194,31 @@ export default function VotingPage() {
   };
 
   const handleSaveVoting = () => {
-    // Aquí iría la lógica para guardar la votación
-    setIsCreateDialogOpen(false);
-    setIsEditDialogOpen(false);
-    setEditingVoting(null);
+    let text = "create";
+    if (editingVoting.id_voting) {
+      editingVoting.id = editingVoting.id_voting;
+      text = "update";
+    }
+
+    socket.emit(
+      `${text}-voting`,
+      {
+        ...editingVoting,
+        identity: getIdentity(),
+        token: getToken(),
+      },
+      (res: any) => {
+        if (res.success) {
+          setIsCreateDialogOpen(false);
+          setIsEditDialogOpen(false);
+          setEditingVoting(null);
+          setMessage(undefined);
+          loadVoting(setMockVoting, currentPage);
+        } else {
+          setMessage(res.message);
+        }
+      }
+    );
   };
 
   const handleConfirmDelete = () => {
@@ -549,6 +619,7 @@ export default function VotingPage() {
                     ? "Modifique los datos de la votación."
                     : "Complete los datos para crear una nueva votación."}
                 </DialogDescription>
+                <DialogDescription>{message}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -557,9 +628,12 @@ export default function VotingPage() {
                   </Label>
                   <Input
                     id="title"
-                    defaultValue={editingVoting?.title || ""}
+                    defaultValue={editingVoting?.voting_name}
                     className="col-span-3"
                     placeholder="Título de la votación"
+                    onChange={(e) => {
+                      handleInputChange("voting_name", e.target.value);
+                    }}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-start gap-4">
@@ -568,46 +642,38 @@ export default function VotingPage() {
                   </Label>
                   <Textarea
                     id="description"
-                    defaultValue={editingVoting?.description || ""}
+                    defaultValue={editingVoting?.description}
                     className="col-span-3"
                     placeholder="Descripción detallada..."
+                    onChange={(e) => {
+                      handleInputChange("voting_description", e.target.value);
+                    }}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="commission" className="text-right">
                     Comisión
                   </Label>
-                  <Select defaultValue={editingVoting?.commission || ""}>
+                  <Select
+                    defaultValue={editingVoting?.commission_name}
+                    onValueChange={(value) =>
+                      handleInputChange("commission", value)
+                    }
+                  >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Seleccionar comisión" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="salud">Comisión de Salud</SelectItem>
-                      <SelectItem value="educacion">
-                        Comisión de Educación
-                      </SelectItem>
-                      <SelectItem value="economia">
-                        Comisión de Economía
-                      </SelectItem>
-                      <SelectItem value="cultura">
-                        Comisión de Cultura
-                      </SelectItem>
-                      <SelectItem value="ciencia">
-                        Comisión de Ciencia y Tecnología
-                      </SelectItem>
+                      {commissions.map((actualCommi) => (
+                        <SelectItem
+                          key={actualCommi.id_commission}
+                          value={actualCommi.name}
+                        >
+                          {actualCommi.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="deadline" className="text-right">
-                    Fecha Límite
-                  </Label>
-                  <Input
-                    id="deadline"
-                    type="datetime-local"
-                    defaultValue={editingVoting?.deadline || ""}
-                    className="col-span-3"
-                  />
                 </div>
               </div>
               <DialogFooter>

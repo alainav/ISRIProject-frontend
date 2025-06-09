@@ -6,6 +6,7 @@ import { IFormData } from "@/interfaces/IFormData";
 import { IVoting } from "@/interfaces/IVoting";
 import { isFunction } from "util";
 import { Dispatch } from "react";
+import { ICommission } from "@/interfaces/ICommission";
 
 declare global {
   interface Window {
@@ -72,6 +73,7 @@ let __formData: IFormData = {
 
 let __roles: IExtandar[] = [];
 let __countries: IExtandar[] = [];
+let __commission: ICommission[] = [];
 // Closure para encapsular las variables
 const authStore = (() => {
   // Variables privadas
@@ -133,11 +135,17 @@ export const prepareAuxVoting = (voting: IVoting) => {
   return __voting;
 };
 
+export const prepareAuxCommission = (commission: ICommission[]) => {
+  __commission = commission;
+  return __commission;
+};
+
 // Function to get current user
 export const getAuxUser = (): IUser => __user;
 export const getAuxRoles = (): IExtandar[] => __roles;
 export const getAuxCountries = (): IExtandar[] => __countries;
 export const getAuxVoting = (): IVoting => __voting;
+export const getAuxCommission = (): ICommission[] => __commission;
 
 // Cambiamos a un array de listeners para soportar múltiples componentes
 const monitorDataListeners: ((data: any) => void)[] = [];
