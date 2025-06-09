@@ -8,7 +8,11 @@ import Link from "next/link";
 import { getAuxVoting, getIdentity, getSocket, getToken } from "@/lib/utils";
 import { IVoting } from "@/interfaces/IVoting";
 
-export default function VotingMonitorPage() {
+export default function VotingMonitorPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [votingData, setVotingData] = useState<IVoting>(getAuxVoting());

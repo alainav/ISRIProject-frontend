@@ -249,27 +249,6 @@ export default function UsersPage() {
     });
   };
 
-  /*.sort((a, b) => {
-      let aValue: string | number = a[sortField];
-      let bValue: string | number = b[sortField];
-
-      if (sortField === "creationDate" || sortField === "expirationDate") {
-        aValue = new Date(aValue as string).getTime();
-        bValue = new Date(bValue as string).getTime();
-      }
-
-      if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = (bValue as string).toLowerCase();
-      }
-
-      if (sortDirection === "asc") {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });*/
-
   const paginatedUsers = useMemo(() => {
     setStartIndex((currentPage - 1) * 10);
     return filteredAndSortedUsers.slice(0, itemsPerPage);
@@ -521,9 +500,8 @@ export default function UsersPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos los estados</SelectItem>
-                      <SelectItem value="active">Activo</SelectItem>
-                      <SelectItem value="inactive">Inactivo</SelectItem>
-                      <SelectItem value="expired">Expirado</SelectItem>
+                      <SelectItem value="Activo">Activo</SelectItem>
+                      <SelectItem value="Inactivo">Inactivo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

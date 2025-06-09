@@ -8,7 +8,7 @@ import Link from "next/link";
 import { getAuxVoting, getIdentity, getToken, socket } from "@/lib/utils";
 import { IVoting } from "@/interfaces/IVoting";
 
-export default function VotingPage() {
+export default function VotingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [hasVoted, setHasVoted] = useState(false);

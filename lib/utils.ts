@@ -7,6 +7,11 @@ import { IVoting } from "@/interfaces/IVoting";
 import { isFunction } from "util";
 import { Dispatch } from "react";
 import { ICommission } from "@/interfaces/ICommission";
+import { fileURLToPath } from "url";
+import path from "path";
+
+export const __filename = fileURLToPath(import.meta.url);
+export const __dirname = path.dirname(__filename);
 
 declare global {
   interface Window {

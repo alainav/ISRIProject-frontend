@@ -83,7 +83,7 @@ const loadVoting = (setMockVoting: Function, currentPage: number) => {
   );
 };
 
-export default function VotingPage() {
+export default function VotingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
