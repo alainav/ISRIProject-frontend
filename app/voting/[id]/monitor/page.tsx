@@ -122,8 +122,10 @@ export default function VotingMonitorPage() {
   // Create a grid of countries with their votes
   const renderCountryGrid = () => {
     const countries = monitorData?.votes || [];
-    const columns = 7;
-    const maxItemsPerColumn = 2;
+    const maxItemsPerColumn = 28;
+    const columns = countries.length / maxItemsPerColumn;
+
+    console.log(columns);
 
     // 1. Dividir los países en columnas (máximo 28 elementos por columna)
     const columnData: (typeof countries)[] = [];
