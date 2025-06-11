@@ -67,15 +67,11 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
     "Usuario actualizado exitosamente. Redirigiendo a la lista de usuarios..."
   );
   //SessionStorge Variables
-  const [identity, setIdentity] = useState<string | null>("");
-  const [token, setToken] = useState<string | null>("");
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
     setIsAuthenticated(getIsAuthenticated());
-    setIdentity(getIdentity());
-    setToken(getToken());
     setStorageUserName(getStorageUsername());
 
     setIsLoading(false);

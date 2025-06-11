@@ -47,14 +47,12 @@ export default function Dashboard() {
   const [isEditing, setIsEditing] = useState(false);
   //SessionStorge Variables
   const [identity, setIdentity] = useState<string | null>("");
-  const [token, setToken] = useState<string | null>("");
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
     setIsAuthenticated(getIsAuthenticated());
     setIdentity(getIdentity());
-    setToken(getToken());
     setStorageUserName(getStorageUsername());
   }, [router]);
 

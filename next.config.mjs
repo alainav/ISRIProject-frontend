@@ -15,13 +15,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  distDir: path.resolve(__dirname, "../client/build/.next"),
-
-  // Para exportación completamente estática
-  output: "export",
-
-  // Configuración adicional si es necesaria
-  trailingSlash: true,
 };
 
 export default nextConfig;
