@@ -63,6 +63,7 @@ export default function NewUserPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [countries, setCountries] = useState<{ id: number; name: string }[]>(
     []
   );
@@ -109,6 +110,7 @@ export default function NewUserPage() {
 
     loadRoles();
     loadCountries();
+    setIsLoading(false);
   }, [router]);
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function NewUserPage() {
       icon: Vote,
       href: "/voting",
     },
-    { id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
+    //{ id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
   ];
 
   const validateForm = (): boolean => {
@@ -224,28 +226,101 @@ export default function NewUserPage() {
     router.push("/users");
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+        {/* Header Skeleton */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="h-8 bg-gray-200 rounded w-40 animate-pulse"></div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="h-8 bg-gray-200 rounded w-32 animate-pulse"></div>
+                <div className="h-10 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Navigation Skeleton */}
+        <nav className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex space-x-1 overflow-x-auto">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="px-6 py-3 rounded-t-lg bg-gray-200 animate-pulse"
+                  style={{ width: "120px" }}
+                ></div>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content Skeleton */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="h-10 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+              <div>
+                <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-80 animate-pulse"></div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="bg-gray-100 h-16 border-b border-gray-200 animate-pulse"></div>
+              <div className="p-8 space-y-8">
+                {[...Array(3)].map((_, sectionIdx) => (
+                  <div key={sectionIdx} className="space-y-6">
+                    <div className="h-6 bg-gray-200 rounded w-56 mb-4 animate-pulse"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {[...Array(sectionIdx === 0 ? 4 : 2)].map((_, i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+                          <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex justify-end gap-4 pt-6">
+                  <div className="h-10 bg-gray-200 rounded-md w-32 animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded-md w-40 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
+          <div className="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0 w-full sm:w-auto justify-center sm:justify-start">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                 <span className="text-white font-bold text-sm">XIII</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">
                 Modelo de Naciones Unidas
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 font-medium">
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-end">
+              <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
                 Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="border-gray-300 hover:bg-gray-50"
+                className="border-gray-300 hover:bg-gray-50 whitespace-nowrap"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
@@ -258,17 +333,17 @@ export default function NewUserPage() {
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 overflow-x-auto">
+          <div className="flex overflow-x-auto py-1">
             {navigationTabs.map((tab) => (
               <Link key={tab.id} href={tab.href || "#"}>
                 <button
-                  className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-all duration-200 whitespace-nowrap border-b-2 ${
+                  className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium rounded-t-lg transition-all duration-200 whitespace-nowrap border-b-2 ${
                     tab.active
                       ? "bg-blue-600 text-white border-blue-600 shadow-md"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-transparent hover:border-gray-300"
                   }`}
                 >
-                  <tab.icon className="w-4 h-4 inline mr-2" />
+                  <tab.icon className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
                   {tab.label}
                 </button>
               </Link>
@@ -278,24 +353,24 @@ export default function NewUserPage() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="space-y-6">
           {/* Header Section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <Link href="/users">
               <Button
                 variant="outline"
-                className="border-gray-300 hover:bg-gray-50"
+                className="border-gray-300 hover:bg-gray-50 text-sm sm:text-base"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver a Usuarios
               </Button>
             </Link>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Añadir Nuevo Representante
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 Complete la información del nuevo representante
               </p>
             </div>
@@ -314,20 +389,20 @@ export default function NewUserPage() {
 
           {/* Form */}
           <Card className="shadow-lg">
-            <CardHeader className="bg-gray-50 border-b border-gray-200">
-              <CardTitle className="flex items-center text-xl">
-                <User className="w-6 h-6 mr-2 text-blue-600" />
+            <CardHeader className="bg-gray-50 border-b border-gray-200 py-4">
+              <CardTitle className="flex items-center text-lg sm:text-xl">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-blue-600" />
                 Información del Usuario
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-8">
+            <CardContent className="p-4 sm:p-6 md:p-8">
+              <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
                 {/* Personal Information */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                     Información Personal
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label
                         htmlFor="firstName"
@@ -341,7 +416,7 @@ export default function NewUserPage() {
                         onChange={(e) =>
                           handleInputChange("first_name", e.target.value)
                         }
-                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base ${
                           errors.firstName
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : ""
@@ -349,8 +424,8 @@ export default function NewUserPage() {
                         placeholder="Ingrese el primer nombre"
                       />
                       {errors.firstName && (
-                        <p className="text-sm text-red-600 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
+                        <p className="text-xs sm:text-sm text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           {errors.firstName}
                         </p>
                       )}
@@ -365,11 +440,11 @@ export default function NewUserPage() {
                       </Label>
                       <Input
                         id="secondName"
-                        value={formData.second_name}
+                        value={formData.second_name || undefined}
                         onChange={(e) =>
                           handleInputChange("second_name", e.target.value)
                         }
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
                         placeholder="Ingrese el segundo nombre (opcional)"
                       />
                     </div>
@@ -387,7 +462,7 @@ export default function NewUserPage() {
                         onChange={(e) =>
                           handleInputChange("first_surname", e.target.value)
                         }
-                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base ${
                           errors.lastName
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : ""
@@ -395,8 +470,8 @@ export default function NewUserPage() {
                         placeholder="Ingrese el primer apellido"
                       />
                       {errors.lastName && (
-                        <p className="text-sm text-red-600 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
+                        <p className="text-xs sm:text-sm text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           {errors.lastName}
                         </p>
                       )}
@@ -415,7 +490,7 @@ export default function NewUserPage() {
                         onChange={(e) =>
                           handleInputChange("second_surname", e.target.value)
                         }
-                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                        className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
                         placeholder="Ingrese el segundo apellido (opcional)"
                       />
                     </div>
@@ -423,17 +498,17 @@ export default function NewUserPage() {
                 </div>
 
                 {/* Account Information */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                     Información de Cuenta
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label
                         htmlFor="email"
                         className="text-sm font-medium text-gray-700 flex items-center"
                       >
-                        <Mail className="w-4 h-4 mr-1" />
+                        <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Correo Electrónico *
                       </Label>
                       <Input
@@ -443,7 +518,7 @@ export default function NewUserPage() {
                         onChange={(e) =>
                           handleInputChange("email", e.target.value)
                         }
-                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base ${
                           errors.email
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : ""
@@ -451,8 +526,8 @@ export default function NewUserPage() {
                         placeholder="usuario@ejemplo.com"
                       />
                       {errors.email && (
-                        <p className="text-sm text-red-600 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
+                        <p className="text-xs sm:text-sm text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           {errors.email}
                         </p>
                       )}
@@ -471,7 +546,7 @@ export default function NewUserPage() {
                         onChange={(e) =>
                           handleInputChange("userName", e.target.value)
                         }
-                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 ${
+                        className={`border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base ${
                           errors.username
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : ""
@@ -479,8 +554,8 @@ export default function NewUserPage() {
                         placeholder="nombreusuario"
                       />
                       {errors.username && (
-                        <p className="text-sm text-red-600 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
+                        <p className="text-xs sm:text-sm text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           {errors.username}
                         </p>
                       )}
@@ -489,17 +564,17 @@ export default function NewUserPage() {
                 </div>
 
                 {/* Role and Location */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                <div className="space-y-4 sm:space-y-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
                     Rol y Ubicación
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
                       <Label
                         htmlFor="country"
                         className="text-sm font-medium text-gray-700 flex items-center"
                       >
-                        <MapPin className="w-4 h-4 mr-1" />
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         País *
                       </Label>
                       <Select
@@ -509,7 +584,7 @@ export default function NewUserPage() {
                         }
                       >
                         <SelectTrigger
-                          className={`border-gray-300 focus:border-blue-500 ${
+                          className={`border-gray-300 focus:border-blue-500 text-sm sm:text-base ${
                             errors.country
                               ? "border-red-500 focus:border-red-500"
                               : ""
@@ -529,8 +604,8 @@ export default function NewUserPage() {
                         </SelectContent>
                       </Select>
                       {errors.country && (
-                        <p className="text-sm text-red-600 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
+                        <p className="text-xs sm:text-sm text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           {errors.country}
                         </p>
                       )}
@@ -541,7 +616,7 @@ export default function NewUserPage() {
                         htmlFor="role"
                         className="text-sm font-medium text-gray-700 flex items-center"
                       >
-                        <Shield className="w-4 h-4 mr-1" />
+                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Rol *
                       </Label>
                       <Select
@@ -551,7 +626,7 @@ export default function NewUserPage() {
                         }
                       >
                         <SelectTrigger
-                          className={`border-gray-300 focus:border-blue-500 ${
+                          className={`border-gray-300 focus:border-blue-500 text-sm sm:text-base ${
                             errors.role
                               ? "border-red-500 focus:border-red-500"
                               : ""
@@ -571,8 +646,8 @@ export default function NewUserPage() {
                         </SelectContent>
                       </Select>
                       {errors.role && (
-                        <p className="text-sm text-red-600 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-1" />
+                        <p className="text-xs sm:text-sm text-red-600 flex items-center">
+                          <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                           {errors.role}
                         </p>
                       )}
@@ -581,12 +656,12 @@ export default function NewUserPage() {
                 </div>
 
                 {/* Form Actions */}
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleCancel}
-                    className="border-gray-300 hover:bg-gray-50"
+                    className="border-gray-300 hover:bg-gray-50 text-sm sm:text-base"
                     disabled={isSubmitting}
                   >
                     <X className="w-4 h-4 mr-2" />
@@ -594,7 +669,7 @@ export default function NewUserPage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

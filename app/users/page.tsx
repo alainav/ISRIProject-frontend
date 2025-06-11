@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 import {
   Select,
   SelectContent,
@@ -37,6 +39,8 @@ import {
   CalendarIcon,
   Icon,
   Orbit,
+  User,
+  Key,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -89,6 +93,7 @@ export default function UsersPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [isLoading, setIsLoading] = useState(true);
   const [mockUsers, setMockUsers] = useState<IUser[]>([]);
   const [roles, setRoles] = useState<{ id: number; name: string }[]>([]);
   const [countries, setCountries] = useState<{ id: number; name: string }[]>(
@@ -105,6 +110,7 @@ export default function UsersPage() {
   const [isAuthenticated, setAuthenticated] = useState<string | null>();
 
   useEffect(() => {
+    setIsLoading(true);
     // 1. Verificación inicial de autenticación (se ejecuta primero)
     setAuthenticated(getIsAuthenticated());
     setStorageUserName(getStorageUsername());
@@ -148,6 +154,7 @@ export default function UsersPage() {
     loadDeputies(setMockUsers, setTotals, currentPage);
     loadRoles();
     loadCountries();
+    setIsLoading(false);
   }, [router, socket]); // Agrega todas las dependencias necesarias
 
   useEffect(() => {
@@ -158,12 +165,16 @@ export default function UsersPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    setIsLoading(true);
     loadDeputies(setMockUsers, setTotals, currentPage);
+    setIsLoading(false);
   }, [currentPage]);
 
   useEffect(() => {
+    setIsLoading(true);
     const filtered = prepareFilterDeputies();
     setFilterUsers(filtered);
+    setIsLoading(false);
   }, [mockUsers, searchTerm, countryFilter, roleFilter, statusFilter]);
 
   const handleLogout = () => {
@@ -174,6 +185,7 @@ export default function UsersPage() {
   };
 
   const handleDelete = (userName: string, eventName: string) => {
+    setIsLoading(true);
     socket.emit(
       eventName,
       { identity: getIdentity(), token: getToken(), userName },
@@ -184,6 +196,7 @@ export default function UsersPage() {
         }
       }
     );
+    setIsLoading(false);
   };
 
   const navigationTabs = [
@@ -212,7 +225,7 @@ export default function UsersPage() {
       icon: Vote,
       href: "/voting",
     },
-    { id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
+    //{ id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
   ];
 
   const handleSort = (field: SortField) => {
@@ -255,27 +268,41 @@ export default function UsersPage() {
   }, [filteredAndSortedUsers, currentPage, itemsPerPage]);
 
   const getStatusBadge = (status: string) => {
+    const baseClasses = "text-xs py-1 px-2 rounded-full border";
+
     switch (status) {
-      case "active":
+      case "Activo":
         return (
-          <Badge className="bg-green-100 text-green-800 border-green-200">
+          <span
+            className={`${baseClasses} bg-green-100 text-green-800 border-green-200`}
+          >
             Activo
-          </Badge>
+          </span>
         );
       case "inactive":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+          <span
+            className={`${baseClasses} bg-yellow-100 text-yellow-800 border-yellow-200`}
+          >
             Inactivo
-          </Badge>
+          </span>
         );
-      case "expired":
+      case "Inactivo":
         return (
-          <Badge className="bg-red-100 text-red-800 border-red-200">
+          <span
+            className={`${baseClasses} bg-red-100 text-red-800 border-red-200`}
+          >
             Expirado
-          </Badge>
+          </span>
         );
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return (
+          <span
+            className={`${baseClasses} bg-gray-100 text-gray-800 border-gray-200`}
+          >
+            {status}
+          </span>
+        );
     }
   };
 
@@ -292,23 +319,23 @@ export default function UsersPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
+          <div className="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0 w-full sm:w-auto justify-center sm:justify-start">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                 <span className="text-white font-bold text-sm">XIII</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">
                 Modelo de Naciones Unidas
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 font-medium">
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-end">
+              <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
                 Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="border-gray-300 hover:bg-gray-50"
+                className="border-gray-300 hover:bg-gray-50 whitespace-nowrap"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
@@ -526,208 +553,390 @@ export default function UsersPage() {
           {/* Users Table */}
           <Card className="shadow-md">
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left">
-                        <button
-                          onClick={() => handleSort("email")}
-                          className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          <Mail className="w-4 h-4" />
-                          <span>Correo</span>
-                          {getSortIcon("email")}
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <span className="text-sm font-semibold text-gray-900">
-                          Usuario
-                        </span>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <span className="text-sm font-semibold text-gray-900">
-                          Código de Acceso
-                        </span>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <button
-                          onClick={() => handleSort("userName")}
-                          className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          <Users className="w-4 h-4" />
-                          <span>Nombre Completo</span>
-                          {getSortIcon("userName")}
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <button
-                          onClick={() => handleSort("creationDate")}
-                          className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>Fecha Creación</span>
-                          {getSortIcon("creationDate")}
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <button
-                          onClick={() => handleSort("expirationDate")}
-                          className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>Fecha Expiración</span>
-                          {getSortIcon("expirationDate")}
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <button
-                          //onClick={() => handleSort("country")}
-                          className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          <MapPin className="w-4 h-4" />
-                          <span>País</span>
-                          {
-                            //getSortIcon("country")
-                          }
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <button
-                          //onClick={() => handleSort("role")}
-                          className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                        >
-                          <Shield className="w-4 h-4" />
-                          <span>Rol</span>
-                          {
-                            //getSortIcon("role")
-                          }
-                        </button>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <span className="text-sm font-semibold text-gray-900">
-                          Estado
-                        </span>
-                      </th>
-                      <th className="px-6 py-4 text-left">
-                        <span className="text-sm font-semibold text-gray-900">
-                          Acciones
-                        </span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {paginatedUsers.map((user) => (
-                      <tr
-                        key={user.email}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                          {user.email}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {user.userName}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {user.code_access}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                          {user.name.name}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {user.date_register}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {user.date_expired}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {user.country.name}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
-                          {user.role.name}
-                        </td>
-                        <td className="px-6 py-4">
-                          {getStatusBadge(user.status)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
-                            <Link href={`/users/${user.userName}/edit`}>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-blue-300 hover:bg-blue-50 text-blue-700"
-                                onClick={() => prepareAuxUser(user)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-red-300 hover:bg-red-50 text-red-700"
-                              onClick={() =>
-                                handleDelete(user.userName, "delete-deputy")
-                              }
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-green-300 hover:bg-green-50 text-green-700"
-                              onClick={() =>
-                                handleDelete(user.userName, "activate-deputy")
-                              }
-                            >
-                              <Orbit className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
-                    Mostrando {startIndex + 1} a{" "}
-                    {Math.min(startIndex + 10, totals.totalCount)} de{" "}
-                    {totals.totalCount} resultados
+              {isLoading ? (
+                <div className="p-6">
+                  <div className="hidden md:block">
+                    {/* Desktop Skeleton */}
+                    <div className="animate-pulse space-y-4">
+                      <div className="grid grid-cols-10 gap-4">
+                        {[...Array(10)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="h-4 bg-gray-300 rounded"
+                          ></div>
+                        ))}
+                      </div>
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="grid grid-cols-10 gap-4 pt-4">
+                          {[...Array(10)].map((_, j) => (
+                            <div
+                              key={j}
+                              className="h-4 bg-gray-200 rounded"
+                            ></div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setCurrentPage(Math.max(1, currentPage - 1))
-                      }
-                      disabled={currentPage === 1}
-                      className="border-gray-300"
-                    >
-                      Anterior
-                    </Button>
-                    <span className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded">
-                      {currentPage} / {totals.totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setCurrentPage(
-                          Math.min(totals.totalPages, currentPage + 1)
-                        )
-                      }
-                      disabled={currentPage === totals.totalPages}
-                      className="border-gray-300"
-                    >
-                      Siguiente
-                    </Button>
+                  <div className="block md:hidden">
+                    {/* Mobile Skeleton */}
+                    <div className="animate-pulse space-y-4">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="bg-white p-4 rounded-lg shadow">
+                          <div className="flex justify-between">
+                            <div className="h-6 bg-gray-300 rounded w-1/4"></div>
+                            <div className="h-6 bg-gray-300 rounded w-16"></div>
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                            <div className="h-4 bg-gray-200 rounded w-3/5"></div>
+                          </div>
+                          <div className="mt-4 flex justify-end space-x-2">
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left">
+                            <span className="text-sm font-semibold text-gray-900">
+                              Usuario
+                            </span>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <span className="text-sm font-semibold text-gray-900">
+                              Código de Acceso
+                            </span>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <button
+                              onClick={() => handleSort("userName")}
+                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            >
+                              <Users className="w-4 h-4" />
+                              <span>Nombre Completo</span>
+                              {getSortIcon("userName")}
+                            </button>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <button
+                              onClick={() => handleSort("expirationDate")}
+                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            >
+                              <CalendarIcon className="w-4 h-4" />
+                              <span>Fecha Expiración</span>
+                              {getSortIcon("expirationDate")}
+                            </button>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <button className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                              <MapPin className="w-4 h-4" />
+                              <span>País</span>
+                            </button>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <button className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                              <Shield className="w-4 h-4" />
+                              <span>Rol</span>
+                            </button>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <span className="text-sm font-semibold text-gray-900">
+                              Estado
+                            </span>
+                          </th>
+                          <th className="px-6 py-4 text-left">
+                            <span className="text-sm font-semibold text-gray-900">
+                              Acciones
+                            </span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white">
+                        {paginatedUsers.map((user) => (
+                          <tr
+                            key={user.email}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {user.userName}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {user.code_access}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                              {user.name.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {user.date_expired}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {user.country.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {user.role.name}
+                            </td>
+                            <td className="px-6 py-4">
+                              {getStatusBadge(user.status)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-2">
+                                <Link href={`/users/${user.userName}/edit`}>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                                    onClick={() => prepareAuxUser(user)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-300 hover:bg-red-50 text-red-700"
+                                  onClick={() =>
+                                    handleDelete(user.userName, "delete-deputy")
+                                  }
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-green-300 hover:bg-green-50 text-green-700"
+                                  onClick={() =>
+                                    handleDelete(
+                                      user.userName,
+                                      "activate-deputy"
+                                    )
+                                  }
+                                >
+                                  <Orbit className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* Pagination */}
+                    <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="text-xs sm:text-sm text-gray-700">
+                          Mostrando {filteredAndSortedUsers.length} de{" "}
+                          {totals.totalCount} resultados
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage(Math.max(1, currentPage - 1))
+                            }
+                            disabled={currentPage === 1}
+                            className="border-gray-300 text-xs sm:text-sm"
+                          >
+                            Anterior
+                          </Button>
+                          <span className="px-3 py-1 sm:px-4 sm:py-2 text-xs sm:text-sm text-gray-700 bg-white border border-gray-300 rounded">
+                            {currentPage} / {totals.totalPages || 1}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage(
+                                Math.min(totals.totalPages, currentPage + 1)
+                              )
+                            }
+                            disabled={
+                              currentPage === totals.totalPages ||
+                              totals.totalPages === 0
+                            }
+                            className="border-gray-300 text-xs sm:text-sm"
+                          >
+                            Siguiente
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="block md:hidden p-4">
+                    {paginatedUsers.map((user) => (
+                      <div
+                        key={user.email}
+                        className="bg-white rounded-lg shadow p-4 mb-4"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-gray-900">
+                              {user.name.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {user.email}
+                            </p>
+                          </div>
+                          {getStatusBadge(user.status)}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center">
+                            <User className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{user.userName}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Key className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{user.code_access}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <CalendarIcon className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{user.date_register}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <CalendarIcon className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{user.date_expired}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{user.country.name}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <Shield className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{user.role.name}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex justify-end space-x-2">
+                          <Link href={`/users/${user.userName}/edit`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                              onClick={() => prepareAuxUser(user)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-300 hover:bg-red-50 text-red-700"
+                            onClick={() =>
+                              handleDelete(user.userName, "delete-deputy")
+                            }
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-green-300 hover:bg-green-50 text-green-700"
+                            onClick={() =>
+                              handleDelete(user.userName, "activate-deputy")
+                            }
+                          >
+                            <Orbit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Pagination */}
+              {/*{!isLoading && (
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700">
+                      Mostrando {startIndex + 1} a{" "}
+                      {Math.min(startIndex + 10, totals.totalCount)} de{" "}
+                      {totals.totalCount} resultados
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage(Math.max(1, currentPage - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="border-gray-300"
+                      >
+                        Anterior
+                      </Button>
+                      <span className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded">
+                        {currentPage} / {totals.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage(
+                            Math.min(totals.totalPages, currentPage + 1)
+                          )
+                        }
+                        disabled={currentPage === totals.totalPages}
+                        className="border-gray-300"
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}*/}
+              {/* Pagination for mobile */}
+              {!isLoading && (
+                <div className="sm:hidden bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="text-xs text-gray-700 text-center">
+                      Mostrando {filteredAndSortedUsers.length} de{" "}
+                      {totals.totalCount} comisiones
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage(Math.max(1, currentPage - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="border-gray-300 text-xs"
+                      >
+                        Anterior
+                      </Button>
+                      <span className="px-3 py-1 text-xs text-gray-700 bg-white border border-gray-300 rounded">
+                        Página {currentPage}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totals.totalPages}
+                        className="border-gray-300 text-xs"
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

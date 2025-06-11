@@ -128,6 +128,7 @@ export default function CommissionsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
+    setIsLoading(true);
     setIsAuthenticated(getIsAuthenticated());
     setIdentity(getIdentity());
     setStorageUserName(getStorageUsername());
@@ -212,17 +213,21 @@ export default function CommissionsPage() {
   }, [currentPage]);
 
   useEffect(() => {
+    setIsLoading(true);
     const filtered = prepareFilterCommission();
     setFilterCommission(filtered);
     setIsLoading(false);
   }, [mockCommissions, searchTerm]);
 
   useEffect(() => {
+    setIsLoading(true);
     const filtered = prepareFilterCountry();
     setFilteredCountries(filtered);
+    setIsLoading(false);
   }, [countries, searchCountry]);
 
   useEffect(() => {
+    setIsLoading(true);
     if (selectedItem && !isCharge) {
       if (selectedItem.countries) {
         const countryNames = selectedItem.countries.map((c) => c);
@@ -232,6 +237,7 @@ export default function CommissionsPage() {
     } else if (selectedItem && isCharge) {
       setSelectedCountries(selectedCountries);
     }
+    setIsLoading(false);
   }, [selectedItem]);
 
   const handleLogout = () => {
@@ -242,6 +248,7 @@ export default function CommissionsPage() {
   };
 
   const handleDelete = (id: number) => {
+    setIsLoading(true);
     socket.emit(
       "delete-commission",
       { identity: getIdentity(), token: getToken(), id },
@@ -260,6 +267,7 @@ export default function CommissionsPage() {
         }, 10000);
       }
     );
+    setIsLoading(false);
   };
 
   const handleCountryChange = (country: ICountries, isChecked: boolean) => {
@@ -287,6 +295,7 @@ export default function CommissionsPage() {
   };
 
   const handleOnUpdate = (id: number | undefined) => {
+    setIsLoading(true);
     const sendCommission: any = { ...selectedItem };
 
     sendCommission.countries = selectedCountries.map((country) => country.id);
@@ -338,6 +347,7 @@ export default function CommissionsPage() {
         }
       );
     }
+    setIsLoading(false);
   };
 
   const navigationTabs = [
@@ -361,7 +371,7 @@ export default function CommissionsPage() {
       icon: Vote,
       href: "/voting",
     },
-    { id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
+    //{ id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
   ];
 
   const handleSort = (field: SortField) => {
