@@ -279,7 +279,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
       href: "/voting",
       active: true,
     },
-    { id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
+    //{ id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
   ];
 
   const handleLogout = () => {

@@ -76,8 +76,8 @@ export default function Dashboard() {
     { id: "editions", label: "Gestionar Edición", icon: Calendar },
     { id: "commissions", label: "Gestionar Comisiones", icon: Building },
     { id: "voting", label: "Gestionar Votaciones", icon: Vote },
-    { id: "roles", label: "Gestionar Roles", icon: Settings },
-    { id: "profile", label: "Mi Perfil", icon: UserCheck },
+    //{ id: "roles", label: "Gestionar Roles", icon: Settings },
+    //{ id: "profile", label: "Mi Perfil", icon: UserCheck },
   ];
 
   // Mock data
