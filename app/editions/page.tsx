@@ -40,6 +40,7 @@ import {
   socket,
 } from "@/lib/utils";
 import { IUser } from "@/interfaces/IUser";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SortField =
   | number
@@ -80,11 +81,13 @@ export default function EditionsPage() {
   const [mockEditions, setMockEditions] = useState<IEdition[]>([]);
   const [presidents, setPresidents] = useState<IUser[]>([]);
   const [secretaries, setSecretaries] = useState<IUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
 
   useEffect(() => {
+    setIsLoading(true);
     setIsAuthenticated(getIsAuthenticated());
     setStorageUserName(getStorageUsername());
 
@@ -108,6 +111,7 @@ export default function EditionsPage() {
     loadEditions(setMockEditions, currentPage);
     loadDeputies("presidents");
     loadDeputies("secretaries");
+    setIsLoading(false);
   }, [router, currentPage]);
 
   useEffect(() => {
@@ -125,6 +129,7 @@ export default function EditionsPage() {
   };
 
   const handleOnUpdate = (id: number | undefined) => {
+    setIsLoading(true);
     const sendEdition = { ...selectedItem };
 
     if (id !== 0) {
@@ -160,6 +165,7 @@ export default function EditionsPage() {
         }
       );
     }
+    setIsLoading(false);
   };
 
   const handleInputChange = (field: keyof IEdition, value: string) => {
@@ -175,6 +181,7 @@ export default function EditionsPage() {
   };
 
   const handleDelete = (id: number) => {
+    setIsLoading(true);
     socket.emit(
       "delete-edition",
       { identity: getIdentity(), token: getToken(), id },
@@ -185,6 +192,7 @@ export default function EditionsPage() {
         }
       }
     );
+    setIsLoading(false);
   };
 
   const navigationTabs = [
@@ -208,7 +216,7 @@ export default function EditionsPage() {
       icon: Vote,
       href: "/voting",
     },
-    { id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
+    //{ id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
   ];
 
   const handleSort = (field: SortField) => {
@@ -245,135 +253,162 @@ export default function EditionsPage() {
     startIndex + itemsPerPage
   );
 
-  const renderEditionForm = (edition: IEdition | null = null) => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold">
-        {edition ? "Modificar Edición" : "Crear una Edición"}
-      </h3>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Nombre de Edición
-          </label>
-          <Input
-            defaultValue={edition?.name || ""}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-          />
+  const renderEditionForm = (edition: IEdition | null = null) => {
+    if (isLoading) {
+      return (
+        <div className="space-y-6">
+          <Skeleton className="h-6 w-1/3" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Fecha de Inicio
-          </label>
-          <Input
-            type="date"
-            defaultValue={edition?.initial_date || ""}
-            onChange={(e) => handleInputChange("initial_date", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Fecha de Finalización
-          </label>
+      );
+    }
 
-          <Input
-            type="date"
-            defaultValue={edition?.end_date || ""}
-            onChange={(e) => handleInputChange("end_date", e.target.value)}
-          />
-        </div>
-      </div>
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold">
+          {edition ? "Modificar Edición" : "Crear una Edición"}
+        </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Presidente General
-          </label>
-          <Select
-            defaultValue={edition?.presidentUserName}
-            onValueChange={(value) => handleInputChange("president", value)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Nombre de Edición
+            </label>
+            <Input
+              defaultValue={edition?.name || ""}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Fecha de Inicio
+            </label>
+            <Input
+              type="date"
+              defaultValue={edition?.initial_date || ""}
+              onChange={(e) =>
+                handleInputChange("initial_date", e.target.value)
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Fecha de Finalización
+            </label>
+            <Input
+              type="date"
+              defaultValue={edition?.end_date || ""}
+              onChange={(e) => handleInputChange("end_date", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Presidente General
+            </label>
+            <Select
+              defaultValue={edition?.presidentUserName}
+              onValueChange={(value) => handleInputChange("president", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar Presidente" />
+              </SelectTrigger>
+              <SelectContent>
+                {presidents.map((president) => (
+                  <SelectItem
+                    key={president.userName}
+                    value={president.userName}
+                  >
+                    {`${president.name.first_name} ${president.name.first_surname}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Secretario General
+            </label>
+            <Select
+              defaultValue={edition?.secretaryUserName}
+              onValueChange={(value) => handleInputChange("secretary", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar Secretario" />
+              </SelectTrigger>
+              <SelectContent>
+                {secretaries.map((secretary) => (
+                  <SelectItem
+                    key={secretary.userName}
+                    value={secretary.userName}
+                  >
+                    {`${secretary.name.first_name} ${secretary.name.first_surname}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button
+            onClick={() => {
+              setIsLoading(true);
+              setIsEditing(false);
+              handleOnUpdate(selectedItem?.id_edition ?? 0);
+              setSelectedItem(null);
+              setIsLoading(false);
+            }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar Presidente" />
-            </SelectTrigger>
-            <SelectContent>
-              {presidents.map((president) => (
-                <SelectItem key={president.userName} value={president.userName}>
-                  {`${president.name.first_name} ${president.name.first_surname}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Secretario General
-          </label>
-          <Select
-            defaultValue={edition?.secretaryUserName}
-            onValueChange={(value) => handleInputChange("secretary", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar Secretario" />
-            </SelectTrigger>
-            <SelectContent>
-              {secretaries.map((secretary) => (
-                <SelectItem key={secretary.userName} value={secretary.userName}>
-                  {`${secretary.name.first_name} ${secretary.name.first_surname}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            {edition ? "Aceptar" : "Registrar"}
+          </Button>
 
-      <div className="flex gap-4">
-        <Button
-          onClick={() => {
-            setIsEditing(false);
-            handleOnUpdate(
-              selectedItem?.id_edition ? selectedItem?.id_edition : 0
-            );
-            setSelectedItem(null);
-          }}
-        >
-          {edition ? "Aceptar" : "Registrar"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setIsEditing(false);
-            setSelectedItem(null);
-          }}
-        >
-          Cancelar
-        </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsEditing(false);
+              setSelectedItem(null);
+            }}
+          >
+            Cancelar
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
+          <div className="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0 w-full sm:w-auto justify-center sm:justify-start">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                 <span className="text-white font-bold text-sm">XIII</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">
                 Modelo de Naciones Unidas
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 font-medium">
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-end">
+              <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
                 Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="border-gray-300 hover:bg-gray-50"
+                className="border-gray-300 hover:bg-gray-50 whitespace-nowrap"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
@@ -383,10 +418,9 @@ export default function EditionsPage() {
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
+      <nav className="bg-white border-b border-gray-200 shadow-sm overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 overflow-x-auto">
+          <div className="flex space-x-1">
             {navigationTabs.map((tab) => (
               <Link key={tab.id} href={tab.href || "#"}>
                 <button
@@ -405,14 +439,12 @@ export default function EditionsPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {isEditing ? (
             renderEditionForm(selectedItem)
           ) : (
             <>
-              {/* Header Section */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-3xl font-bold text-gray-900">
@@ -431,55 +463,48 @@ export default function EditionsPage() {
                 </Button>
               </div>
 
-              {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="border-l-4 border-l-blue-500 shadow-md hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="h-8 w-8 text-blue-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {mockEditions.length}
-                        </p>
-                        <p className="text-sm text-gray-600">Total Ediciones</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-l-4 border-l-green-500 shadow-md hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <CalendarIcon className="h-8 w-8 text-green-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {mockEditions.reduce(
-                            (sum, edition) => sum + edition.duration,
-                            0
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="border-l-4 shadow-md">
+                    <CardContent className="p-4">
+                      {isLoading ? (
+                        <Skeleton className="h-16 w-full" />
+                      ) : (
+                        <div className="flex items-center space-x-3">
+                          {i === 0 && (
+                            <Calendar className="h-8 w-8 text-blue-600" />
                           )}
-                        </p>
-                        <p className="text-sm text-gray-600">Días Totales</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-l-4 border-l-purple-500 shadow-md hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <User className="h-8 w-8 text-purple-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {new Set(mockEditions.map((e) => e.president)).size}
-                        </p>
-                        <p className="text-sm text-gray-600">Presidentes</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                          {i === 1 && (
+                            <CalendarIcon className="h-8 w-8 text-green-600" />
+                          )}
+                          {i === 2 && (
+                            <User className="h-8 w-8 text-purple-600" />
+                          )}
+                          <div>
+                            <p className="text-2xl font-bold text-gray-900">
+                              {i === 0 && mockEditions.length}
+                              {i === 1 &&
+                                mockEditions.reduce(
+                                  (sum, edition) => sum + edition.duration,
+                                  0
+                                )}
+                              {i === 2 &&
+                                new Set(mockEditions.map((e) => e.president))
+                                  .size}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {i === 0 && "Total Ediciones"}
+                              {i === 1 && "Días Totales"}
+                              {i === 2 && "Presidentes"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
-              {/* Filters and Search */}
               <Card className="shadow-md">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center text-lg">
@@ -500,116 +525,41 @@ export default function EditionsPage() {
                 </CardContent>
               </Card>
 
-              {/* Editions Table */}
-              <Card className="shadow-md">
+              <Card className="shadow-md overflow-x-auto">
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              //onClick={() => handleSort("number")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <span>Número</span>
-                              {
-                                //getSortIcon("number")
-                              }
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              onClick={() => handleSort("name")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <span>Nombre</span>
-                              {getSortIcon("name")}
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              //onClick={() => handleSort("startDate")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <CalendarIcon className="w-4 h-4" />
-                              <span>Fecha de Inicio</span>
-                              {/*getSortIcon("startDate")*/}
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              //onClick={() => handleSort("endDate")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <CalendarIcon className="w-4 h-4" />
-                              <span>Fecha de Finalización</span>
-                              {/*getSortIcon("endDate")*/}
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              //onClick={() => handleSort("days")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <span>Días</span>
-                              {/*getSortIcon("days")*/}
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              onClick={() => handleSort("president")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <span>Presidente</span>
-                              {getSortIcon("president")}
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <button
-                              onClick={() => handleSort("secretary")}
-                              className="flex items-center space-x-1 text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                            >
-                              <span>Secretario</span>
-                              {getSortIcon("secretary")}
-                            </button>
-                          </th>
-                          <th className="px-6 py-4 text-left">
-                            <span className="text-sm font-semibold text-gray-900">
-                              Acciones
-                            </span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
+                  {isLoading ? (
+                    <Skeleton className="h-96 w-full" />
+                  ) : (
+                    <>
+                      {/* Cards para vista móvil */}
+                      <div className="block md:hidden space-y-4 px-4 py-2">
                         {paginatedEditions.map((edition) => (
-                          <tr
-                            key={edition.id_edition}
-                            className="hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {edition.id_edition}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                              {edition.name}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {edition.initial_date}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {edition.end_date}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {edition.duration}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {edition.president}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-700">
-                              {edition.secretary}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
+                          <Card key={edition.id_edition} className="shadow-md">
+                            <CardContent className="p-4 space-y-2">
+                              <h3 className="text-lg font-bold text-blue-600">
+                                {edition.name}
+                              </h3>
+                              <p className="text-sm text-gray-700">
+                                <span className="font-semibold">Fechas:</span>{" "}
+                                {edition.initial_date} - {edition.end_date}
+                              </p>
+                              <p className="text-sm text-gray-700">
+                                <span className="font-semibold">Días:</span>{" "}
+                                {edition.duration}
+                              </p>
+                              <p className="text-sm text-gray-700">
+                                <span className="font-semibold">
+                                  Presidente:
+                                </span>{" "}
+                                {edition.president}
+                              </p>
+                              <p className="text-sm text-gray-700">
+                                <span className="font-semibold">
+                                  Secretario:
+                                </span>{" "}
+                                {edition.secretary}
+                              </p>
+                              <div className="flex gap-2 pt-2">
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -632,57 +582,147 @@ export default function EditionsPage() {
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
-                            </td>
-                          </tr>
+                            </CardContent>
+                          </Card>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
-                        Mostrando {startIndex + 1} a{" "}
-                        {Math.min(
-                          startIndex + itemsPerPage,
-                          filteredAndSortedEditions.length
-                        )}{" "}
-                        de {filteredAndSortedEditions.length} resultados
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setCurrentPage(Math.max(1, currentPage - 1))
-                          }
-                          disabled={currentPage === 1}
-                          className="border-gray-300"
-                        >
-                          Anterior
-                        </Button>
-                        <span className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded">
-                          {currentPage} / {totalPages || 1}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setCurrentPage(
-                              Math.min(totalPages, currentPage + 1)
-                            )
-                          }
-                          disabled={
-                            currentPage === totalPages || totalPages === 0
-                          }
-                          className="border-gray-300"
-                        >
-                          Siguiente
-                        </Button>
+
+                      {/* Tabla para escritorio */}
+                      <div className="hidden md:block">
+                        <table className="w-full min-w-[900px]">
+                          <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Número
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Nombre
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Fecha de Inicio
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Fecha de Finalización
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Días
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Presidente
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Secretario
+                              </th>
+                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                                Acciones
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 bg-white">
+                            {paginatedEditions.map((edition) => (
+                              <tr
+                                key={edition.id_edition}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                  {edition.id_edition}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                  {edition.name}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  {edition.initial_date}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  {edition.end_date}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  {edition.duration}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  {edition.president}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-700">
+                                  {edition.secretary}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                                      onClick={() => {
+                                        setSelectedItem(edition);
+                                        setIsEditing(true);
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-red-300 hover:bg-red-50 text-red-700"
+                                      onClick={() =>
+                                        handleDelete(edition.id_edition)
+                                      }
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+
+                  {!isLoading && (
+                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+                        <div className="text-sm text-gray-700">
+                          Mostrando {startIndex + 1} a{" "}
+                          {Math.min(
+                            startIndex + itemsPerPage,
+                            filteredAndSortedEditions.length
+                          )}{" "}
+                          de {filteredAndSortedEditions.length} resultados
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage(Math.max(1, currentPage - 1))
+                            }
+                            disabled={currentPage === 1}
+                            className="border-gray-300"
+                          >
+                            Anterior
+                          </Button>
+                          <span className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded">
+                            {currentPage} / {totalPages || 1}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage(
+                                Math.min(totalPages, currentPage + 1)
+                              )
+                            }
+                            disabled={
+                              currentPage === totalPages || totalPages === 0
+                            }
+                            className="border-gray-300"
+                          >
+                            Siguiente
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </>
