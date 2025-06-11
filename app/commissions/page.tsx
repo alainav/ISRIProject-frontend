@@ -44,6 +44,7 @@ import {
 } from "@/lib/utils";
 import { ICountries } from "@/interfaces/ICountries";
 import { IUser } from "@/interfaces/IUser";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SortField =
   | "number"
@@ -419,189 +420,206 @@ export default function CommissionsPage() {
     return filteredAndSortedCommissions.slice(0, itemsPerPage);
   }, [filteredAndSortedCommissions, currentPage, itemsPerPage]);
 
-  const renderCommissionForm = (commission: ICommission | null = null) => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold">
-        {commission ? "Modificar una Comisión" : "Crear una Comisión"}
-      </h3>
+  const renderCommissionForm = (commission: ICommission | null = null) => {
+    if (isLoading) {
+      return (
+        <div className="space-y-6">
+          <Skeleton className="h-6 w-1/3" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
+          <div className="flex gap-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+      );
+    }
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">Nombre</label>
-          <Input
-            defaultValue={commission?.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Presidente</label>
-          <Select
-            defaultValue={commission?.presidentUserName}
-            onValueChange={(value) => handleInputChange("president", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar Presidente" />
-            </SelectTrigger>
-            <SelectContent>
-              {presidents.map((president) => (
-                <SelectItem key={president.userName} value={president.userName}>
-                  {`${president.name.first_name} ${president.name.first_surname}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Secretario</label>
-          <Select
-            defaultValue={commission?.secretaryUserName}
-            onValueChange={(value) => handleInputChange("secretary", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar Secretario" />
-            </SelectTrigger>
-            <SelectContent>
-              {secretaries.map((secretary) => (
-                <SelectItem key={secretary.userName} value={secretary.userName}>
-                  {`${secretary.name.first_name} ${secretary.name.first_surname}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Edición</label>
-          <Select
-            defaultValue={commission?.edition}
-            onValueChange={(value) => handleInputChange("edition", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar Edición" />
-            </SelectTrigger>
-            <SelectContent>
-              {editions.map((edition) => (
-                <SelectItem key={edition.name} value={edition.name}>
-                  {moment(edition.end_date, "DD-MM-YYYY").isBefore(
-                    moment(edition.cubaDate, "DD-MM-YYYY")
-                  ) ? (
-                    <span className="text-red-800">{`(Concluida el ${edition.end_date}) ${edition.name} `}</span> // Texto en rojo
-                  ) : (
-                    <span className="text-green-800">{edition.name}</span>
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    return (
+      <div className="space-y-6">
+        <h3 className="text-lg font-semibold">
+          {commission ? "Modificar una Comisión" : "Crear una Comisión"}
+        </h3>
 
-      <div className="space-y-4">
-        <div className="flex gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Nombre</label>
+            <Input
+              defaultValue={commission?.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Presidente</label>
+            <Select
+              defaultValue={commission?.presidentUserName}
+              onValueChange={(value) => handleInputChange("president", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar Presidente" />
+              </SelectTrigger>
+              <SelectContent>
+                {presidents.map((president) => (
+                  <SelectItem
+                    key={president.userName}
+                    value={president.userName}
+                  >
+                    {`${president.name.first_name} ${president.name.first_surname}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Secretario</label>
+            <Select
+              defaultValue={commission?.secretaryUserName}
+              onValueChange={(value) => handleInputChange("secretary", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar Secretario" />
+              </SelectTrigger>
+              <SelectContent>
+                {secretaries.map((secretary) => (
+                  <SelectItem
+                    key={secretary.userName}
+                    value={secretary.userName}
+                  >
+                    {`${secretary.name.first_name} ${secretary.name.first_surname}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Edición</label>
+            <Select
+              defaultValue={commission?.edition}
+              onValueChange={(value) => handleInputChange("edition", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar Edición" />
+              </SelectTrigger>
+              <SelectContent>
+                {editions.map((edition) => (
+                  <SelectItem key={edition.name} value={edition.name}>
+                    {moment(edition.end_date, "DD-MM-YYYY").isBefore(
+                      moment(edition.cubaDate, "DD-MM-YYYY")
+                    ) ? (
+                      <span className="text-red-800">{`(Concluida el ${edition.end_date}) ${edition.name}`}</span>
+                    ) : (
+                      <span className="text-green-800">{edition.name}</span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-4">
           <Input
             placeholder="Buscar País"
             onChange={(e) => setSearchCountry(e.target.value)}
-            className="flex-1"
+            className="w-full"
           />
-        </div>
 
-        <div className="border rounded-lg">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left">Seleccionar</th>
-                <th className="px-4 py-3 text-left">País</th>
-                <th className="px-4 py-3 text-left">Representante</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCountries.map((country) => (
-                <tr key={country.id} className="border-t">
-                  <td className="px-4 py-3">
-                    <Checkbox
-                      checked={selectedCountries.some(
-                        (c) => c.name === country.name
-                      )}
-                      onCheckedChange={(checked) => {
-                        // `checked` puede ser boolean | "indeterminate", pero en este caso es boolean
-                        handleCountryChange(country, checked === true);
-                      }}
-                    />
-                  </td>
-                  <td className="px-4 py-3">{country.name}</td>
-                  <td className="px-4 py-3">{country.deputy || `No Existe`}</td>
+          <div className="border rounded-lg overflow-x-auto">
+            <table className="w-full min-w-[500px] text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left">Seleccionar</th>
+                  <th className="px-4 py-3 text-left">País</th>
+                  <th className="px-4 py-3 text-left">Representante</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredCountries.map((country) => (
+                  <tr key={country.id} className="border-t">
+                    <td className="px-4 py-3">
+                      <Checkbox
+                        checked={selectedCountries.some(
+                          (c) => c.name === country.name
+                        )}
+                        onCheckedChange={(checked) =>
+                          handleCountryChange(country, checked === true)
+                        }
+                      />
+                    </td>
+                    <td className="px-4 py-3">{country.name}</td>
+                    <td className="px-4 py-3">
+                      {country.deputy || "No Existe"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button
+            onClick={() => {
+              setIsLoading(true);
+              handleOnUpdate(commission?.id_commission ?? 0);
+              setSelectedItem(null);
+              setIsCharge(false);
+              setSelectedCountries([]);
+              setIsEditing(false);
+              setIsLoading(false);
+            }}
+          >
+            {commission ? "Aceptar" : "Registrar"}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsEditing(false);
+              setSelectedItem(null);
+              setIsCharge(false);
+              setSelectedCountries([]);
+            }}
+          >
+            Cancelar
+          </Button>
         </div>
       </div>
-
-      <div className="flex gap-4">
-        <Button
-          onClick={() => {
-            setIsEditing(false);
-            handleOnUpdate(
-              commission?.id_commission ? commission.id_commission : 0
-            );
-            setSelectedItem(null);
-            setIsCharge(false);
-            setSelectedCountries([]);
-          }}
-        >
-          {commission ? "Aceptar" : "Registrar"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setIsEditing(false);
-            setSelectedItem(null);
-            setIsCharge(false);
-            setSelectedCountries([]);
-          }}
-        >
-          Cancelar
-        </Button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Overlay de carga */}
-      {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando comisiones...</p>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 gap-3">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-xs sm:text-sm">
-                  XIII
-                </span>
+          <div className="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0 w-full sm:w-auto justify-center sm:justify-start">
+              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                <span className="text-white font-bold text-sm">XIII</span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">
                 Modelo de Naciones Unidas
               </h1>
             </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-              <span className="text-sm text-gray-600 font-medium">
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-end">
+              <span className="text-sm text-gray-600 font-medium whitespace-nowrap">
                 Bienvenido, {storageUsername || "Usuario"}
               </span>
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
-                size="sm"
+                className="border-gray-300 hover:bg-gray-50 whitespace-nowrap"
               >
-                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
               </Button>
             </div>
