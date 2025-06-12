@@ -159,7 +159,7 @@ export const getSocket = (setMonitorData?: Dispatch<any>) => {
   }
 
   if (typeof window !== "undefined") {
-    const newSocket = io("http://localhost:3001");
+    const newSocket = io("https://isriproject-backend.onrender.com");
 
     newSocket.on("your-identity", (identity) => {
       if (sessionStorage.getItem("identity") && !window.__socketFlag) {
