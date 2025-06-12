@@ -248,7 +248,7 @@ export default function UsersPage() {
   };
 
   const prepareFilterDeputies = () => {
-    return mockUsers.filter((user) => {
+    return mockUsers?.filter((user) => {
       const matchesSearch =
         user.name.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
