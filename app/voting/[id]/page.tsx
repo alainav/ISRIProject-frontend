@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, LineChart } from "lucide-react";
@@ -10,7 +10,7 @@ import { IVoting } from "@/interfaces/IVoting";
 
 export default function VotingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [selectedOption, setSelectedOption] = useState<number | null>();
   const [hasVoted, setHasVoted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [votingData, setVotingData] = useState<IVoting>(getAuxVoting());
@@ -24,6 +24,9 @@ export default function VotingPage({ params }: { params: { id: string } }) {
     }
   };
 
+  useEffect(() => {
+    console.log("Elegido", selectedOption);
+  }, [selectedOption]);
   const submitVote = () => {
     if (selectedOption) {
       setIsLoading(true);
@@ -202,7 +205,11 @@ export default function VotingPage({ params }: { params: { id: string } }) {
               {!hasVoted ? (
                 <Button
                   onClick={submitVote}
-                  disabled={!selectedOption || isLoading}
+                  disabled={
+                    selectedOption === undefined ||
+                    selectedOption === null ||
+                    isLoading
+                  }
                   className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors"
                 >
                   {isLoading ? "Procesando..." : "Votar"}
