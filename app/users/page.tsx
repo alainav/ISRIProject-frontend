@@ -54,6 +54,7 @@ import {
   socket,
 } from "@/lib/utils";
 import { IUser } from "@/interfaces/IUser";
+import { CountrySelect } from "./countryselect";
 
 type SortField = "userName" | "email" | "creationDate" | "expirationDate";
 type SortDirection = "asc" | "desc";
@@ -99,6 +100,8 @@ export default function UsersPage() {
   const [countries, setCountries] = useState<{ id: number; name: string }[]>(
     []
   );
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [countriesLoaded, setCountriesLoaded] = useState(false);
   const [totals, setTotals] = useState<{
     totalPages: number;
     totalCount: number;
@@ -108,6 +111,37 @@ export default function UsersPage() {
   //SessionStorge Variables
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setAuthenticated] = useState<string | null>();
+
+  // 2. Modificar la función loadCountries para usar paginación
+  const loadCountries = (page = 1, initialLoad = false) => {
+    // No cargar si ya estamos cargando o si ya cargamos todos los países
+    if (isLoadingCountries || (countriesLoaded && initialLoad)) return;
+
+    setIsLoadingCountries(true);
+    socket.emit(
+      "get-countries",
+      {
+        token: getToken(),
+        identity: getIdentity(),
+        page: page,
+        perPage: 50,
+      },
+      (response: any) => {
+        if (response.success) {
+          setCountries((prev) => [...prev, ...response.countries]);
+
+          // Verificar si hay más páginas por cargar
+          if (page < response.paginated.total_pages) {
+            loadCountries(page + 1);
+          } else {
+            setCountriesLoaded(true);
+          }
+        }
+
+        setIsLoadingCountries(false);
+      }
+    );
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -133,27 +167,9 @@ export default function UsersPage() {
       );
     };
 
-    // 4. Función para cargar los paises (separa la lógica)
-    const loadCountries = () => {
-      socket.emit(
-        "get-countries",
-        {
-          token: getToken(),
-          identity: getIdentity(),
-          page: currentPage,
-        },
-        (response: any) => {
-          if (response.success) {
-            setCountries(response.countries);
-            prepareAuxCountry(response.countries);
-          }
-        }
-      );
-    };
-
     loadDeputies(setMockUsers, setTotals, currentPage);
     loadRoles();
-    loadCountries();
+    loadCountries(1, true); // Cargar solo primera página inicialmente
     setIsLoading(false);
   }, [router, socket]); // Agrega todas las dependencias necesarias
 
@@ -176,6 +192,12 @@ export default function UsersPage() {
     setFilterUsers(filtered);
     setIsLoading(false);
   }, [mockUsers, searchTerm, countryFilter, roleFilter, statusFilter]);
+
+  // 4. Crear función para cargar más países cuando se abre el dropdown
+
+  useEffect(() => {
+    console.log("Country Filter", countryFilter);
+  }, [countryFilter]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("authenticated");
@@ -254,7 +276,7 @@ export default function UsersPage() {
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.userName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCountry =
-        !countryFilter || user.country.name === countryFilter;
+        !countryFilter || user.country.id.toString() === countryFilter;
       const matchesRole = !roleFilter || user.role.name === roleFilter;
       const matchesStatus = !statusFilter || user.status === statusFilter;
 
@@ -480,22 +502,21 @@ export default function UsersPage() {
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
                     País
                   </Label>
-                  <Select
+
+                  <CountrySelect
+                    countries={countries}
                     value={countryFilter}
                     onValueChange={setCountryFilter}
-                  >
-                    <SelectTrigger className="border-gray-300 focus:border-blue-500">
-                      <SelectValue placeholder="Todos los países" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los países</SelectItem>
-                      {countries.map((country) => (
-                        <SelectItem key={country.id} value={country.name}>
-                          {country.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Seleccione un país"
+                    className="mb-4"
+                    isLoading={isLoadingCountries}
+                    countriesLoaded={countriesLoaded}
+                    onOpenChange={(open) => {
+                      if (open && !countriesLoaded && !isLoadingCountries) {
+                        loadCountries(1, true);
+                      }
+                    }}
+                  />
                 </div>
 
                 <div>
