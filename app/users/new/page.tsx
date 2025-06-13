@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ import {
   Shield,
   AlertCircle,
   CheckCircle,
+  Search,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -42,6 +43,7 @@ import {
   socket,
 } from "@/lib/utils";
 import { IFormData } from "@/interfaces/IFormData";
+import { CountrySelect } from "../countryselect";
 
 interface FormErrors {
   [key: string]: string;
@@ -51,7 +53,7 @@ export default function NewUserPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<IFormData>({
     first_name: "",
-    second_name: null,
+    second_name: undefined,
     first_surname: "",
     second_surname: "",
     email: "",
@@ -67,9 +69,44 @@ export default function NewUserPage() {
   const [countries, setCountries] = useState<{ id: number; name: string }[]>(
     []
   );
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [countriesLoaded, setCountriesLoaded] = useState(false);
+  const [countrySearchTerm, setCountrySearchTerm] = useState("");
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   //SessionStorge Variables
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
+
+  // 2. Modificar la función loadCountries para usar paginación
+  const loadCountries = (page = 1, initialLoad = false) => {
+    // No cargar si ya estamos cargando o si ya cargamos todos los países
+    if (isLoadingCountries || (countriesLoaded && initialLoad)) return;
+
+    setIsLoadingCountries(true);
+    socket.emit(
+      "get-countries",
+      {
+        token: getToken(),
+        identity: getIdentity(),
+        page: page,
+        perPage: 50,
+      },
+      (response: any) => {
+        if (response.success) {
+          setCountries((prev) => [...prev, ...response.countries]);
+
+          // Verificar si hay más páginas por cargar
+          if (page < response.paginated.total_pages) {
+            loadCountries(page + 1);
+          } else {
+            setCountriesLoaded(true);
+          }
+        }
+
+        setIsLoadingCountries(false);
+      }
+    );
+  };
 
   useEffect(() => {
     setIsAuthenticated(getIsAuthenticated());
@@ -92,24 +129,7 @@ export default function NewUserPage() {
       );
     };
 
-    // 4. Función para cargar los paises (separa la lógica)
-    const loadCountries = () => {
-      socket.emit(
-        "get-countries",
-        {
-          token: getToken(),
-          identity: getIdentity(),
-        },
-        (response: any) => {
-          if (response.success) {
-            setCountries(response.countries);
-          }
-        }
-      );
-    };
-
     loadRoles();
-    loadCountries();
     setIsLoading(false);
   }, [router]);
 
@@ -126,6 +146,33 @@ export default function NewUserPage() {
     sessionStorage.removeItem("token");
     router.push("/");
   };
+
+  const handleCountryDropdownOpen = (open: boolean) => {
+    setIsSelectOpen(open);
+    if (open && !countriesLoaded && !isLoadingCountries) {
+      loadCountries(1, true);
+      setCountrySearchTerm("");
+    }
+    if (!open) {
+      setCountrySearchTerm("");
+    }
+  };
+
+  const filteredCountries = useMemo(() => {
+    const uniqueCountries = countries.reduce(
+      (acc: { id: number; name: string }[], country) => {
+        if (!acc.some((c) => c.id === country.id)) {
+          acc.push(country);
+        }
+        return acc;
+      },
+      []
+    );
+
+    return uniqueCountries.filter((country) =>
+      country.name.toLowerCase().includes(countrySearchTerm.toLowerCase())
+    );
+  }, [countries, countrySearchTerm]);
 
   const navigationTabs = [
     {
@@ -215,7 +262,17 @@ export default function NewUserPage() {
       setIsSubmitting(false);
       if (response.success) {
         setShowSuccess(true);
-        router.push("/users");
+        setFormData({
+          first_name: "",
+          second_name: undefined,
+          first_surname: "",
+          second_surname: "",
+          email: "",
+          userName: "",
+          country: "",
+          role: "",
+        });
+        //router.push("/users");
       } else {
         setErrors({ username: response.message });
       }
@@ -570,39 +627,26 @@ export default function NewUserPage() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div className="space-y-2">
-                      <Label
-                        htmlFor="country"
-                        className="text-sm font-medium text-gray-700 flex items-center"
-                      >
+                      <Label className="text-sm font-medium text-gray-700 flex items-center">
                         <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         País *
                       </Label>
-                      <Select
+                      <CountrySelect
+                        countries={countries}
                         value={formData.country}
-                        onValueChange={(value) =>
+                        onChange={(value) =>
                           handleInputChange("country", value)
                         }
-                      >
-                        <SelectTrigger
-                          className={`border-gray-300 focus:border-blue-500 text-sm sm:text-base ${
-                            errors.country
-                              ? "border-red-500 focus:border-red-500"
-                              : ""
-                          }`}
-                        >
-                          <SelectValue placeholder="Seleccione un país" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countries.map((country) => (
-                            <SelectItem
-                              key={country.id}
-                              value={country.id.toString()}
-                            >
-                              {country.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        placeholder="Seleccione un país"
+                        className="mb-4"
+                        isLoading={isLoadingCountries}
+                        countriesLoaded={countriesLoaded}
+                        onOpenChange={(open) => {
+                          if (open && !countriesLoaded && !isLoadingCountries) {
+                            loadCountries(1, true);
+                          }
+                        }}
+                      />
                       {errors.country && (
                         <p className="text-xs sm:text-sm text-red-600 flex items-center">
                           <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
