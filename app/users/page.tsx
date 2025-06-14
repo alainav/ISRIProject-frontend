@@ -41,9 +41,11 @@ import {
   Orbit,
   User,
   Key,
+  Loader,
 } from "lucide-react";
 import Link from "next/link";
 import {
+  getAuxCountries,
   getIdentity,
   getIsAuthenticated,
   getStorageUsername,
@@ -115,7 +117,17 @@ export default function UsersPage() {
   // 2. Modificar la función loadCountries para usar paginación
   const loadCountries = (page = 1, initialLoad = false) => {
     // No cargar si ya estamos cargando o si ya cargamos todos los países
-    if (isLoadingCountries || (countriesLoaded && initialLoad)) return;
+    if (
+      isLoadingCountries ||
+      (countriesLoaded && initialLoad) ||
+      countries.length > totals.totalCount
+    )
+      return;
+
+    if (getAuxCountries().length !== 0) {
+      setCountries(getAuxCountries());
+      return;
+    }
 
     setIsLoadingCountries(true);
     socket.emit(
@@ -194,10 +206,6 @@ export default function UsersPage() {
   }, [mockUsers, searchTerm, countryFilter, roleFilter, statusFilter]);
 
   // 4. Crear función para cargar más países cuando se abre el dropdown
-
-  useEffect(() => {
-    console.log("Country Filter", countryFilter);
-  }, [countryFilter]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("authenticated");
@@ -402,12 +410,19 @@ export default function UsersPage() {
                 Administre a los representantes del sistema Modelo ONU
               </p>
             </div>
-            <Link href="/users/new">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all duration-200 transform hover:scale-105">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Añadir Representante
-              </Button>
-            </Link>
+            {!isLoadingCountries ? (
+              <Link href="/users/new">
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all duration-200 transform hover:scale-105"
+                  onClick={() => prepareAuxCountry(countries)}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Añadir Representante
+                </Button>
+              </Link>
+            ) : (
+              <Loader className="w-4 h-4 animate-spin" />
+            )}
           </div>
 
           {/* Stats Cards */}
@@ -513,7 +528,7 @@ export default function UsersPage() {
                     countriesLoaded={countriesLoaded}
                     onOpenChange={(open) => {
                       if (open && !countriesLoaded && !isLoadingCountries) {
-                        loadCountries(1, true);
+                        //loadCountries(1, true);
                       }
                     }}
                   />
@@ -714,16 +729,24 @@ export default function UsersPage() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex gap-2">
-                                <Link href={`/users/${user.userName}/edit`}>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-blue-300 hover:bg-blue-50 text-blue-700"
-                                    onClick={() => prepareAuxUser(user)}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                </Link>
+                                {!isLoadingCountries ? (
+                                  <Link href={`/users/${user.userName}/edit`}>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                                      onClick={() => {
+                                        prepareAuxUser(user);
+                                        prepareAuxCountry(countries);
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                  </Link>
+                                ) : (
+                                  <Loader className="w-4 h-4 animate-spin" />
+                                )}
+
                                 <Button
                                   size="sm"
                                   variant="outline"

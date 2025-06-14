@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
+  getAuxCountries,
   getIdentity,
   getIsAuthenticated,
   getStorageUsername,
@@ -53,7 +54,7 @@ export default function NewUserPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<IFormData>({
     first_name: "",
-    second_name: undefined,
+    second_name: "",
     first_surname: "",
     second_surname: "",
     email: "",
@@ -76,11 +77,17 @@ export default function NewUserPage() {
   //SessionStorge Variables
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
+  const [message, setMessage] = useState("Usuario creado exitosamente.");
 
   // 2. Modificar la función loadCountries para usar paginación
   const loadCountries = (page = 1, initialLoad = false) => {
     // No cargar si ya estamos cargando o si ya cargamos todos los países
     if (isLoadingCountries || (countriesLoaded && initialLoad)) return;
+
+    if (getAuxCountries().length !== 0) {
+      setCountries(getAuxCountries());
+      return;
+    }
 
     setIsLoadingCountries(true);
     socket.emit(
@@ -145,17 +152,6 @@ export default function NewUserPage() {
     sessionStorage.removeItem("username");
     sessionStorage.removeItem("token");
     router.push("/");
-  };
-
-  const handleCountryDropdownOpen = (open: boolean) => {
-    setIsSelectOpen(open);
-    if (open && !countriesLoaded && !isLoadingCountries) {
-      loadCountries(1, true);
-      setCountrySearchTerm("");
-    }
-    if (!open) {
-      setCountrySearchTerm("");
-    }
   };
 
   const filteredCountries = useMemo(() => {
@@ -262,20 +258,31 @@ export default function NewUserPage() {
       setIsSubmitting(false);
       if (response.success) {
         setShowSuccess(true);
+        setMessage("Usuario creado exitosamente.");
         setFormData({
           first_name: "",
-          second_name: undefined,
+          second_name: "",
           first_surname: "",
           second_surname: "",
           email: "",
           userName: "",
           country: "",
           role: "",
+          identity: getIdentity(),
+          token: getToken(),
         });
-        //router.push("/users");
       } else {
+        setShowSuccess(true);
+        setMessage(response.message);
         setErrors({ username: response.message });
       }
+
+      setTimeout(() => {
+        setShowSuccess(false);
+        if (response.message.includes("denegada")) {
+          router.push("/users");
+        }
+      }, 5000);
     });
   };
 
@@ -438,8 +445,7 @@ export default function NewUserPage() {
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                Usuario creado exitosamente. Redirigiendo a la lista de
-                representantes...
+                {message}
               </AlertDescription>
             </Alert>
           )}
@@ -497,7 +503,7 @@ export default function NewUserPage() {
                       </Label>
                       <Input
                         id="secondName"
-                        value={formData.second_name || undefined}
+                        value={formData.second_name}
                         onChange={(e) =>
                           handleInputChange("second_name", e.target.value)
                         }
@@ -548,7 +554,7 @@ export default function NewUserPage() {
                           handleInputChange("second_surname", e.target.value)
                         }
                         className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
-                        placeholder="Ingrese el segundo apellido (opcional)"
+                        placeholder="Ingrese el segundo apellido"
                       />
                     </div>
                   </div>

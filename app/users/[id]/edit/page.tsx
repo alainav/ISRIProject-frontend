@@ -49,6 +49,7 @@ import {
 } from "@/lib/utils";
 import { IFormData } from "@/interfaces/IFormData";
 import { socket } from "@/lib/utils";
+import { CountrySelect } from "../../countryselect";
 
 interface FormErrors {
   [key: string]: string;
@@ -189,6 +190,14 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
 
     if (!validateForm()) {
       return;
+    }
+
+    if (
+      formData.name.second_name === "" ||
+      !formData.name.second_name ||
+      formData.name.second_name === null
+    ) {
+      formData.name.second_name = null;
     }
 
     setIsSubmitting(true);
@@ -642,8 +651,9 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                         value: formData.country.id.toString(),
                         onChange: (value: any) =>
                           handleInputChange("country", value),
-                        options: countries,
+                        countries: countries, // Usamos countries en lugar de options
                         error: errors.country,
+                        placeholder: "Seleccione un país",
                       },
                       {
                         id: "role",
@@ -652,7 +662,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                         value: formData.role.id.toString(),
                         onChange: (value: any) =>
                           handleInputChange("role", value),
-                        options: roles,
+                        options: roles, // Mantenemos options para el Select tradicional
                         error: errors.role,
                       },
                     ].map((field) => (
@@ -664,33 +674,53 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                           {field.icon}
                           {field.label}
                         </Label>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger
+                        {field.id === "country" ? (
+                          <CountrySelect
+                            countries={field.countries || []}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder={
+                              field.placeholder || "Seleccione un país"
+                            }
                             className={`text-xs md:text-sm border-gray-300 focus:border-blue-500 ${
                               field.error
                                 ? "border-red-500 focus:border-red-500"
                                 : ""
                             }`}
+                          />
+                        ) : (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
                           >
-                            <SelectValue
-                              placeholder={`Seleccione ${field.label.toLowerCase()}`}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.options.map((option) => (
-                              <SelectItem
-                                key={option.id}
-                                value={option.id.toString()}
-                                className="text-xs md:text-sm"
-                              >
-                                {option.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                            <SelectTrigger
+                              className={`text-xs md:text-sm border-gray-300 focus:border-blue-500 ${
+                                field.error
+                                  ? "border-red-500 focus:border-red-500"
+                                  : ""
+                              }`}
+                            >
+                              <SelectValue
+                                placeholder={`Seleccione ${field.label.toLowerCase()}`}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(field.options || []).map(
+                                (
+                                  option // Añadimos chequeo para options
+                                ) => (
+                                  <SelectItem
+                                    key={option.id}
+                                    value={option.id.toString()}
+                                    className="text-xs md:text-sm"
+                                  >
+                                    {option.name}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        )}
                         {field.error && (
                           <p className="text-xs text-red-600 flex items-center">
                             <AlertCircle className="w-3 h-3 md:w-4 md:h-4 mr-1" />
