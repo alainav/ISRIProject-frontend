@@ -108,6 +108,8 @@ export default function UsersPage() {
     totalPages: number;
     totalCount: number;
   }>({ totalPages: 0, totalCount: 0 });
+  const [totalsCountry, setTotalsCountry] = useState<number>(10000);
+
   const [startIndex, setStartIndex] = useState<number>(0);
   const [filteredAndSortedUsers, setFilterUsers] = useState<IUser[]>([]);
   //SessionStorge Variables
@@ -120,7 +122,7 @@ export default function UsersPage() {
     if (
       isLoadingCountries ||
       (countriesLoaded && initialLoad) ||
-      countries.length > totals.totalCount
+      countries.length > totalsCountry
     )
       return;
 
@@ -142,8 +144,10 @@ export default function UsersPage() {
         if (response.success) {
           setCountries((prev) => [...prev, ...response.countries]);
 
+          setTotalsCountry(response.paginated.paginated.total_count);
+
           // Verificar si hay más páginas por cargar
-          if (page < response.paginated.total_pages) {
+          if (page < response.paginated.paginated.total_pages) {
             loadCountries(page + 1);
           } else {
             setCountriesLoaded(true);
