@@ -126,6 +126,7 @@ export default function CommissionsPage() {
   const [identity, setIdentity] = useState<string | null>("");
   const [storageUsername, setStorageUserName] = useState<string | null>("");
   const [isAuthenticated, setIsAuthenticated] = useState<string | null>();
+  const [totalsCountry, setTotalsCountry] = useState<number>(100000);
 
   useEffect(() => {
     setIsLoading(true);
@@ -133,17 +134,23 @@ export default function CommissionsPage() {
     setIdentity(getIdentity());
     setStorageUserName(getStorageUsername());
 
-    const loadCountries = () => {
+    const loadCountries = (page: number = 1) => {
       socket.emit(
         `get-countries`,
         {
           token: getToken(),
           identity: getIdentity(),
-          page: currentPage,
+          page,
         },
         (response: any) => {
           if (response.success) {
-            setCountries(response.countries);
+            setCountries((prev) => [...prev, ...response.countries]);
+            setTotalsCountry(response.paginated.paginated.total_count);
+
+            // Verificar si hay más páginas por cargar
+            if (page < response.paginated.paginated.total_pages) {
+              loadCountries(page + 1);
+            }
           }
         }
       );

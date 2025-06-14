@@ -220,25 +220,6 @@ export default function EditionsPage() {
     //{ id: "roles", label: "Gestionar Roles", icon: Settings, href: "/roles" },
   ];
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field)
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    return sortDirection === "asc" ? (
-      <ArrowUp className="w-4 h-4 text-blue-600" />
-    ) : (
-      <ArrowDown className="w-4 h-4 text-blue-600" />
-    );
-  };
-
   const filteredAndSortedEditions = mockEditions.filter((edition) => {
     return (
       edition.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -599,7 +580,7 @@ export default function EditionsPage() {
                               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                                 Nombre
                               </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                              <th className="px-4 py-4 text-left text-sm font-semibold text-gray-900">
                                 Fecha de Inicio
                               </th>
                               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
@@ -631,7 +612,7 @@ export default function EditionsPage() {
                                 <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                                   {edition.name}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-gray-700">
+                                <td className="px-4 py-4 text-sm text-gray-700">
                                   {edition.initial_date}
                                 </td>
                                 <td className="px-6 py-4 text-sm text-gray-700">
