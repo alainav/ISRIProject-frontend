@@ -24,11 +24,8 @@ export default function VotingPage({ params }: { params: { id: string } }) {
     }
   };
 
-  useEffect(() => {
-    console.log("Elegido", selectedOption);
-  }, [selectedOption]);
   const submitVote = () => {
-    if (selectedOption) {
+    if (selectedOption !== undefined && selectedOption !== null) {
       setIsLoading(true);
 
       socket.emit(
@@ -100,7 +97,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
 
             <div className="text-center mb-4">
               <h2 className="text-xl font-semibold mb-6">
-                {hasVoted ? "¡Gracias por su voto!" : "Seleccione su voto:"}
+                {hasVoted ? message : "Seleccione su voto:"}
               </h2>
             </div>
 
@@ -225,7 +222,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
                         : `text-yellow-600`
                     } font-medium mb-4`}
                   >
-                    {message}
+                    ¡Gracias por su voto!
                   </p>
                   <div className="flex gap-4 justify-center">
                     <Link href="/voting">

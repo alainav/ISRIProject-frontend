@@ -129,8 +129,6 @@ export default function VotingMonitorPage({
     const maxItemsPerColumn = 28;
     const columns = countries.length / maxItemsPerColumn;
 
-    console.log(columns);
-
     // 1. Dividir los países en columnas (máximo 28 elementos por columna)
     const columnData: (typeof countries)[] = [];
 
