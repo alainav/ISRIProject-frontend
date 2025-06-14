@@ -153,7 +153,13 @@ export default function LoginPage() {
         </Card>
 
         <div className="text-center mt-6 text-blue-700">
-          <p className="text-sm">Sistema de Gestión Modelo ONU</p>
+          <p className="text-lm">
+            Sistema de Gestión Modelo ONU v14062025-010-beta
+          </p>
+          <p className="text-sm">
+            &reg; Todos los derechos reservados. <br />
+            Universidad de las Ciencias Informáticas
+          </p>
         </div>
       </div>
     </div>
