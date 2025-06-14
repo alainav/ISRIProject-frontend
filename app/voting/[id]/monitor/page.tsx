@@ -28,7 +28,6 @@ export default function VotingMonitorPage({
   const [socket, setSocket] = useState<any>();
 
   useEffect(() => {
-    // Simulate loading data
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
@@ -123,58 +122,69 @@ export default function VotingMonitorPage({
     );
   }
 
-  // Create a grid of countries with their votes
   const renderCountryGrid = () => {
     const countries = monitorData?.votes || [];
-    const maxItemsPerColumn = 28;
-    const columns = countries.length / maxItemsPerColumn;
-
-    // 1. Dividir los países en columnas (máximo 28 elementos por columna)
-    const columnData: (typeof countries)[] = [];
-
-    for (let i = 0; i < columns; i++) {
-      const start = i * maxItemsPerColumn;
-      const end = start + maxItemsPerColumn;
-      columnData.push(countries.slice(start, end));
-    }
-
-    // 2. Calcular el máximo de filas necesario (la columna con más elementos)
-    const maxRows = Math.max(...columnData.map((col) => col.length), 0);
+    const maxCountries = 210;
+    const maxRowsDesktop = Math.ceil((monitorData?.votes.length || 1) / 8);
+    const columnsDesktop = Math.ceil(
+      Math.min(countries.length, maxCountries) / maxRowsDesktop
+    );
 
     return (
-      <div className="w-full overflow-x-auto">
-        <table className="w-full border-collapse">
-          <tbody>
-            {Array.from({ length: maxRows }).map((_, rowIndex) => (
-              <tr key={rowIndex} className="border-t">
-                {columnData.map((column, colIndex) => {
-                  const country = column[rowIndex];
-                  if (!country) return null; // No renderizar celdas vacías
+      <>
+        {/* Vista móvil */}
+        <div className="md:hidden w-full overflow-x-auto">
+          <table className="w-full border-collapse">
+            <tbody>
+              {countries.slice(0, maxCountries).map((country, index) => (
+                <tr key={index} className="border-t">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      {getVoteIcon(country.vote)}
+                      <span>{country.country}</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-                  return (
-                    <td
-                      key={`${colIndex}-${rowIndex}`}
-                      className="px-4 py-3 whitespace-nowrap"
-                    >
-                      <div className="flex items-center space-x-2">
-                        {getVoteIcon(country.vote)}
-                        <span>{country.country}</span>
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        {/* Vista escritorio */}
+        <div className="hidden md:block w-full">
+          <table className="w-full border-collapse">
+            <tbody>
+              {Array.from({ length: maxRowsDesktop }).map((_, rowIndex) => (
+                <tr key={rowIndex} className="border-t">
+                  {Array.from({ length: columnsDesktop }).map((_, colIndex) => {
+                    const countryIndex = rowIndex + colIndex * maxRowsDesktop;
+                    const country = countries[countryIndex];
+                    if (!country || countryIndex >= maxCountries) return null;
+
+                    return (
+                      <td
+                        key={`${colIndex}-${rowIndex}`}
+                        className="px-4 py-3 whitespace-nowrap"
+                      >
+                        <div className="flex items-center space-x-2">
+                          {getVoteIcon(country.vote)}
+                          <span>{country.country}</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
     );
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-blue-100">
-        {/* Header Skeleton */}
         <header className="bg-blue-200 shadow-sm border-b border-blue-300">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -187,7 +197,6 @@ export default function VotingMonitorPage({
           </div>
         </header>
 
-        {/* Main Content Skeleton */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden animate-pulse">
             <div className="p-4 border-b bg-gray-100">
@@ -219,7 +228,6 @@ export default function VotingMonitorPage({
 
   return (
     <div className="min-h-screen bg-blue-100">
-      {/* Header */}
       <header className="bg-blue-200 shadow-sm border-b border-blue-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center h-16 gap-2 sm:gap-0">
@@ -245,7 +253,7 @@ export default function VotingMonitorPage({
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -262,7 +270,6 @@ export default function VotingMonitorPage({
           <div className="p-4">{renderCountryGrid()}</div>
 
           <div className="p-4 sm:p-6 flex flex-col md:flex-row justify-center items-center gap-4 sm:gap-8 border-t bg-gray-50">
-            {/* A Favor */}
             <div className="flex flex-col items-center w-full sm:w-auto">
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-green-100 border-4 border-green-500 flex items-center justify-center">
                 <svg
@@ -290,7 +297,6 @@ export default function VotingMonitorPage({
               </div>
             </div>
 
-            {/* En Contra */}
             <div className="flex flex-col items-center w-full sm:w-auto">
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-red-100 border-4 border-red-500 flex items-center justify-center">
                 <svg
@@ -318,7 +324,6 @@ export default function VotingMonitorPage({
               </div>
             </div>
 
-            {/* Abstenciones */}
             <div className="flex flex-col items-center w-full sm:w-auto">
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-yellow-100 border-4 border-yellow-500 flex items-center justify-center">
                 <svg
