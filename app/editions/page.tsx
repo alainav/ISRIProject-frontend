@@ -41,6 +41,7 @@ import {
 } from "@/lib/utils";
 import { IUser } from "@/interfaces/IUser";
 import { Skeleton } from "@/components/ui/skeleton";
+import moment from "moment";
 
 type SortField =
   | number
@@ -307,7 +308,7 @@ export default function EditionsPage() {
             </label>
             <Input
               type="date"
-              defaultValue={edition?.end_date || ""}
+              defaultValue={moment(edition?.end_date).format("YYYY-MM-DD")}
               onChange={(e) => handleInputChange("end_date", e.target.value)}
             />
           </div>
