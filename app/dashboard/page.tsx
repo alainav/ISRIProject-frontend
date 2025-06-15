@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import logo from "@/public/Agora_azul sin fondo.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Users,
@@ -1082,7 +1083,11 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">XIII</span>
+                <img
+                  src={logo.src}
+                  alt="Logo Agora"
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain hover:animate-pulse"
+                />
               </div>
               <h1 className="text-xl font-bold text-gray-900">
                 Modelo de Naciones Unidas

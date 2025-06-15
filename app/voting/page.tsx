@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import logo from "@/public/Agora_azul sin fondo.png";
 import {
   Check,
   Search,
@@ -433,8 +434,12 @@ export default function VotingPage({ params }: { params: { id: string } }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
             <div className="flex items-center space-x-4 mb-4 sm:mb-0 w-full sm:w-auto justify-center sm:justify-start">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
-                <span className="text-white font-bold text-sm">XIII</span>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                <img
+                  src={logo.src}
+                  alt="Logo Agora"
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain hover:animate-pulse"
+                />
               </div>
               <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">
                 Modelo de Naciones Unidas

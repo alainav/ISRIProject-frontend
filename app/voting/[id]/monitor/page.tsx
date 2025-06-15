@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { getAuxVoting, getIdentity, getSocket, getToken } from "@/lib/utils";
 import { IVoting } from "@/interfaces/IVoting";
+import logo from "@/public/Agora_azul sin fondo.png";
 
 export default function VotingMonitorPage({
   params,
@@ -233,7 +234,11 @@ export default function VotingMonitorPage({
           <div className="flex flex-col sm:flex-row justify-between items-center h-16 gap-2 sm:gap-0">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">XIII</span>
+                <img
+                  src={logo.src}
+                  alt="Logo Agora"
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain hover:animate-pulse"
+                />
               </div>
               <h1 className="text-lg sm:text-xl font-bold text-gray-900">
                 Modelo de Naciones Unidas

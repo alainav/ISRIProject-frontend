@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { getIdentity, socket } from "@/lib/utils";
+import logo from "@/public/Agora_azul sin fondo.png";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -62,8 +63,12 @@ export default function LoginPage() {
         <Card className="bg-blue-600 text-white border-0 shadow-2xl transform transition-all duration-300 hover:scale-105">
           <CardHeader className="text-center space-y-6 pb-8">
             <div className="flex justify-center">
-              <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:rotate-12">
-                <div className="text-blue-600 font-bold text-xl">XIII</div>
+              <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-lg hover:animate-bounce">
+                <img
+                  src={logo.src}
+                  alt="Logo Agora"
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain duration-300"
+                />
               </div>
             </div>
 
