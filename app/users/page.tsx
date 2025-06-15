@@ -2,7 +2,7 @@
 
 import { Label } from "@/components/ui/label";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,6 +119,7 @@ export default function UsersPage() {
   // 2. Modificar la función loadCountries para usar paginación
   const loadCountries = (page = 1, initialLoad = false) => {
     // No cargar si ya estamos cargando o si ya cargamos todos los países
+
     if (
       isLoadingCountries ||
       (countriesLoaded && initialLoad) ||
@@ -414,7 +415,7 @@ export default function UsersPage() {
                 Administre a los representantes del sistema Modelo ONU
               </p>
             </div>
-            {!isLoadingCountries ? (
+            {countriesLoaded ? (
               <Link href="/users/new">
                 <Button
                   className="bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all duration-200 transform hover:scale-105"
@@ -733,7 +734,7 @@ export default function UsersPage() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex gap-2">
-                                {!isLoadingCountries ? (
+                                {countriesLoaded ? (
                                   <Link href={`/users/${user.userName}/edit`}>
                                     <Button
                                       size="sm"
