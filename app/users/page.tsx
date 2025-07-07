@@ -877,16 +877,23 @@ export default function UsersPage() {
                         </div>
 
                         <div className="mt-4 flex justify-end space-x-2">
-                          <Link href={`/users/${user.userName}/edit`}>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-300 hover:bg-blue-50 text-blue-700"
-                              onClick={() => prepareAuxUser(user)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
+                          {countriesLoaded ? (
+                            <Link href={`/users/${user.userName}/edit`}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-blue-300 hover:bg-blue-50 text-blue-700"
+                                onClick={() => {
+                                  prepareAuxUser(user);
+                                  prepareAuxCountry(countries);
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          ) : (
+                            <Loader className="w-4 h-4 animate-spin" />
+                          )}
                           <Button
                             size="sm"
                             variant="outline"

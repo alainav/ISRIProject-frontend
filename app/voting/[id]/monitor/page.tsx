@@ -229,31 +229,34 @@ export default function VotingMonitorPage({
 
   return (
     <div className="min-h-screen bg-blue-100">
-      <header className="bg-blue-200 shadow-sm border-b border-blue-300">
+      {/* Header */}
+      <header className="bg-blue-200 shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center h-16 gap-2 sm:gap-0">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center h-auto sm:h-16 py-4 sm:py-0">
+            <div className="flex items-center space-x-4 mb-4 sm:mb-0 w-full sm:w-auto justify-center sm:justify-start">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                 <img
                   src={logo.src}
                   alt="Logo Agora"
                   className="w-16 h-16 md:w-20 md:h-20 object-contain hover:animate-pulse"
                 />
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900 whitespace-nowrap">
                 Modelo de Naciones Unidas
               </h1>
             </div>
-            <Link href={`/voting`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
-              >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                Volver a la Votación
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-end">
+              <Link href={`/voting`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
+                >
+                  <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  Volver a la Votación
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
