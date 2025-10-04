@@ -6,9 +6,8 @@ import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Skeleton from "react-loading-skeleton";
 import logo from "@/public/Agora_azul sin fondo.png";
-import "react-loading-skeleton/dist/skeleton.css";
+//import "react-loading-skeleton/dist/skeleton.css";
 import {
   Select,
   SelectContent,
@@ -43,6 +42,9 @@ import {
   User,
   Key,
   Loader,
+  UserRoundX,
+  UserRoundPlus,
+  UserRoundMinus,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -125,11 +127,14 @@ export default function UsersPage() {
       isLoadingCountries ||
       (countriesLoaded && initialLoad) ||
       countries.length > totalsCountry
-    )
+    ) {
       return;
+    }
 
     if (getAuxCountries().length !== 0) {
       setCountries(getAuxCountries());
+      setCountriesLoaded(true);
+
       return;
     }
 
@@ -762,10 +767,23 @@ export default function UsersPage() {
                                   variant="outline"
                                   className="border-red-300 hover:bg-red-50 text-red-700"
                                   onClick={() =>
-                                    handleDelete(user.userName, "delete-deputy")
+                                    handleDelete(
+                                      user.userName,
+                                      "delete-permanent-deputy"
+                                    )
                                   }
                                 >
                                   <Trash2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-300 hover:bg-red-50 text-red-700"
+                                  onClick={() =>
+                                    handleDelete(user.userName, "delete-deputy")
+                                  }
+                                >
+                                  <UserRoundX className="w-4 h-4" />
                                 </Button>
                                 <Button
                                   size="sm"
@@ -778,7 +796,7 @@ export default function UsersPage() {
                                     )
                                   }
                                 >
-                                  <Orbit className="w-4 h-4" />
+                                  <UserRoundPlus className="w-4 h-4" />
                                 </Button>
                               </div>
                             </td>
@@ -899,10 +917,23 @@ export default function UsersPage() {
                             variant="outline"
                             className="border-red-300 hover:bg-red-50 text-red-700"
                             onClick={() =>
-                              handleDelete(user.userName, "delete-deputy")
+                              handleDelete(
+                                user.userName,
+                                "delete-permanent-deputy"
+                              )
                             }
                           >
                             <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-300 hover:bg-red-50 text-red-700"
+                            onClick={() =>
+                              handleDelete(user.userName, "delete-deputy")
+                            }
+                          >
+                            <UserRoundMinus className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -912,7 +943,7 @@ export default function UsersPage() {
                               handleDelete(user.userName, "activate-deputy")
                             }
                           >
-                            <Orbit className="w-4 h-4" />
+                            <UserRoundPlus className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
