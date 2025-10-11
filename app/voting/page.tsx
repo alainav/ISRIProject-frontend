@@ -199,7 +199,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
   const updateVotingStats = (votingData: IVoting[]) => {
     const activeCount = votingData.filter((s) => s.result === "Activa").length;
     const completedCount = votingData.filter((s) =>
-      ["Aprobada", "Denegada", "Sin Desición"].includes(s.result)
+      ["Aprobada", "Denegada", "Sin Decisión"].includes(s.result)
     ).length;
     const scheduledCount = votingData.filter(
       (s) => s.result === "Programada"
@@ -333,7 +333,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
       case "Aprobada":
       case "Abierta":
         return "bg-green-100 text-green-800";
-      case "Sin Desición":
+      case "Sin Decisión":
         return "bg-gray-100 text-gray-800";
       case "Programada":
         return "bg-blue-100 text-blue-800";
@@ -576,7 +576,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
                   <SelectItem value="Activa">Activas</SelectItem>
                   <SelectItem value="Aprobada">Aprobadas</SelectItem>
                   <SelectItem value="Denegada">Denegadas</SelectItem>
-                  <SelectItem value="Sin Desición">Sin Desición</SelectItem>
+                  <SelectItem value="Sin Decisión">Sin Decisión</SelectItem>
                   <SelectItem value="Programada">Programadas</SelectItem>
                 </SelectContent>
               </Select>
@@ -633,7 +633,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
                       <div className="flex flex-wrap gap-2">
                         {voting.result !== "Aprobada" &&
                           voting.result !== "Denegada" &&
-                          voting.result !== "Sin Desición" && (
+                          voting.result !== "Sin Decisión" && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -825,7 +825,7 @@ export default function VotingPage({ params }: { params: { id: string } }) {
                               className={
                                 voting.result === "Aprobada" ||
                                 voting.result === "Denegada" ||
-                                voting.result === "Sin Desición"
+                                voting.result === "Sin Decisión"
                                   ? "hidden"
                                   : ""
                               }

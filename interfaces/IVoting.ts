@@ -7,7 +7,7 @@ export interface IVoting {
     | "Programada"
     | "Aprobada"
     | "Denegada"
-    | "Sin Desición"
+    | "Sin Decisión"
     | "Activa";
   commission_name: string;
   in_favour: number;
